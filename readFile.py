@@ -2,7 +2,7 @@ import sys
 import os
 import torch
 
-# Add the relevant directory to Python's path
+# # Add the relevant directory to Python's path
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 sys.path.append("/pub/bjvela/KTPFormer/common")  # For testing purposes
 
@@ -42,8 +42,8 @@ def load_model():
     
     # Load the state dictionary into the model
     state_dict = torch.load(MODEL_CONFIG['model_file'], map_location=torch.device(MODEL_CONFIG.get('device', 'cpu')))
-    model.load_state_dict(state_dict)
-
+    model.load_state_dict(state_dict, strict=False)
+    torch.save(model, 'testSaveModel.pt')
     model.eval()
     return model
 
@@ -89,11 +89,15 @@ def main():
     construct_adjacency_matrices(dataset, MODEL_CONFIG["model_args"]["num_frame"])
 
     # Load the model
-    model = load_model()
+    #model = load_model()
+    model = torch.load('testSaveModel.pt')
     print("Model loaded successfully!")
     
-    # Example input tensor (if applicable)
-    # TODO: Add your input tensor and evaluation logic
+    # Example input tensor
+    # TODO
+    
+    # Run evaluation
+    # TODO 
 
 if __name__ == "__main__":
     main()

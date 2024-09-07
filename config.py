@@ -1,6 +1,6 @@
 import numpy as np
 
-from graph_utils.py import adj_mx_from_skeleton, adj_mx_from_skeleton_temporal  # Import the functions
+from common.graph_utils import adj_mx_from_skeleton, adj_mx_from_skeleton_temporal  # Import the functions
 
 
 # Manually input the full paths

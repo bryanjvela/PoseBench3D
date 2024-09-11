@@ -1,0 +1,73 @@
+# config.yaml
+
+dataset: 'h36m'
+keypoints: 'cpn_ft_h36m_dbb'
+subjects_train: 'S1,S5,S6,S7,S8'
+subjects_test: 'S9,S11'
+subjects_unlabeled: ''
+actions: '*'
+checkpoint: 'checkpoint'
+log: 'log/default'
+checkpoint_frequency: 20
+resume: ''
+nolog: false
+evaluate: 'model_243_CPN_best_epoch.bin'
+render: false
+by_subject: false
+export_training_curves: false
+
+# Model arguments
+stride: 128
+epochs: 200
+batch_size: 1024
+dropout: 0.0
+learning_rate: 0.00008
+lr_decay: 0.99
+coverlr: false
+min_loss: 100000.0
+data_augmentation: true
+cs: 512
+dep: 7
+alpha: 0.01
+beta: 2.0
+postrf: false
+ftpostrf: false
+number_of_frames: 243
+num_heads: 8
+context_length: 20
+architecture: '3,3,3'
+slide_window_size: 100
+
+# Experimental arguments
+gpu: '0'
+subset: 1.0
+downsample: 1
+warmup: 1
+no_eval: false
+dense: false
+disable_optimizations: false
+linear_projection: false
+bone_length_term: true
+no_proj: false
+ft: false
+ftpath: 'checkpoint/exp13_ft2d'
+ftchk: 'epoch_330.pth'
+
+# Visualization
+viz_subject: null
+viz_action: null
+viz_camera: 0
+viz_video: null
+viz_skip: 0
+viz_output: null
+viz_export: null
+viz_bitrate: 3000
+viz_no_ground_truth: false
+viz_limit: -1
+viz_downsample: 1
+viz_size: 5
+compare: false
+
+linear_channel_size: 1024
+depth: 4
+lr_decay_gap: 10000

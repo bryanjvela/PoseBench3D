@@ -10,8 +10,8 @@ checkpoint: 'checkpoint'
 log: 'log/default'
 checkpoint_frequency: 20
 resume: ''
-nolog: false
-evaluate: 'model_243_CPN_best_epoch.bin'
+nolog: true
+evaluate: 'KTPFormer_Model.pt'
 render: false
 by_subject: false
 export_training_curves: false
@@ -24,12 +24,12 @@ dropout: 0.0
 learning_rate: 0.00008
 lr_decay: 0.99
 coverlr: false
-min_loss: 100000.0
+min_loss: 100000
 data_augmentation: true
 cs: 512
 dep: 7
 alpha: 0.01
-beta: 2.0
+beta: 2
 postrf: false
 ftpostrf: false
 number_of_frames: 243
@@ -40,7 +40,7 @@ slide_window_size: 100
 
 # Experimental arguments
 gpu: '0'
-subset: 1.0
+subset: 1
 downsample: 1
 warmup: 1
 no_eval: false
@@ -48,6 +48,7 @@ dense: false
 disable_optimizations: false
 linear_projection: false
 bone_length_term: true
+test_time_augmentation: true  # Add this if needed
 no_proj: false
 ft: false
 ftpath: 'checkpoint/exp13_ft2d'

@@ -40,9 +40,16 @@ def load_config(config_path):
     return config
 
 def parse_args():
-    # Use argparse only for the config file path
-    parser = argparse.ArgumentParser(description="Pass YAML config file path")
-    parser.add_argument('-cfg', '--config', default='config.yaml', type=str, help='path to the config file')
+    parser = argparse.ArgumentParser(description="Script requires a YAML configuration file.")
+    
+    # Provide a more detailed help message with an example usage
+    parser.add_argument(
+        '-cfg', 
+        '--config', 
+        required=True, 
+        type=str, 
+        help='Path to the YAML config file. Example: python readFile.py "--config or -cfg" my_Model_Config.yaml'
+    )
     args = parser.parse_args()
     return args
 

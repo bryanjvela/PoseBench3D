@@ -27,7 +27,6 @@ from common.loss import *
 from common.generators import ChunkedGenerator_Seq, UnchunkedGenerator_Seq
 from time import time
 from common.utils import *
-from common.logging import Logger
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
@@ -64,16 +63,6 @@ def main():
     elif config['evaluate'] == '':
         description = "Train!"
 
-    # initial setting
-    TIMESTAMP = "{0:%Y%m%dT%H-%M-%S/}".format(datetime.now())
-    # tensorboard
-    if not config['nolog']:
-        writer = SummaryWriter(config['log']+'_'+TIMESTAMP)
-        writer.add_text('description', description)
-        writer.add_text('command', 'python ' + ' '.join(sys.argv))
-        # logging setting
-        logfile = os.path.join(config['log']+'_'+TIMESTAMP, 'training_logging.log')
-        sys.stdout = Logger(logfile)
     print(description)
     print('python ' + ' '.join(sys.argv))
     print("CUDA Device Count: ", torch.cuda.device_count())
@@ -214,8 +203,6 @@ def main():
     # set receptive_field as number assigned
     receptive_field = config['number_of_frames'] 
     print('INFO: Receptive field: {} frames'.format(receptive_field))
-    if not config['nolog']: 
-        writer.add_text(config['log']+'_'+TIMESTAMP + '/Receptive field', str(receptive_field))
     pad = (receptive_field -1) // 2 # Padding on each side
     min_loss = config['min_loss']
     width = cam['res_w']
@@ -232,8 +219,6 @@ def main():
     for parameter in model.parameters():
         model_params += parameter.numel()
     print('INFO: Trainable parameter count:', model_params/1000000, 'Million')
-    if not config['nolog']:
-        writer.add_text(config['log']+'_'+TIMESTAMP + '/Trainable parameter count', str(model_params/1000000) + ' Million')
 
 
     # make model parallel

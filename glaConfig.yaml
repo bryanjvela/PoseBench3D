@@ -25,6 +25,7 @@ test_time_augmentation: false
 architecture: '3,3,3,3,3'
 causal: false
 channels: 96
+number_of_frames: 243
 
 # Experimental arguments
 subset: 1

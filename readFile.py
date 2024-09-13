@@ -1,34 +1,20 @@
-import ipdb
 import numpy as np
-
-#from common.arguments import parse_args
 import argparse
-
 import torch
+
 
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import os
 import sys
-import errno
-import math
 import yaml
 
-from einops import rearrange, repeat
-from copy import deepcopy
-
 from common.camera import *
-import collections
-from common.model_ktpformer import *
-
-
 from common.loss import *
 from common.generators import ChunkedGenerator_Seq, UnchunkedGenerator_Seq
-from time import time
 from common.utils import *
-from torch.utils.tensorboard import SummaryWriter
-from datetime import datetime
+
 
 
 # torch.backends.cudnn.deterministic = True
@@ -140,81 +126,23 @@ def main():
                 kps[..., :2] = normalize_screen_coordinates(kps[..., :2], w=cam['res_w'], h=cam['res_h'])
                 keypoints[subject][action][cam_idx] = kps
 
-    subjects_train = config['subjects_train'].split(',')
-    subjects_semi = [] if not config['subjects_unlabeled'] else config['subjects_unlabeled'].split(',')
+    #subjects_train = config['subjects_train'].split(',')
+    #subjects_semi = [] if not config['subjects_unlabeled'] else config['subjects_unlabeled'].split(',')
     if not config['render']:
         subjects_test = config['subjects_test'].split(',')
     else:
         subjects_test = [config['viz_subject']]
 
-    
-    def fetch(subjects, action_filter=None, subset=1, parse_3d_poses=True):
-        out_poses_3d = []
-        out_poses_2d = []
-        out_camera_params = []
-        for subject in subjects:
-            for action in keypoints[subject].keys():
-                if action_filter is not None:
-                    found = False
-                    for a in action_filter:
-                        if action.startswith(a):
-                            found = True
-                            break
-                    if not found:
-                        continue
-
-                poses_2d = keypoints[subject][action]
-                for i in range(len(poses_2d)): # Iterate across cameras
-                    out_poses_2d.append(poses_2d[i])
-
-                if subject in dataset.cameras():
-                    cams = dataset.cameras()[subject]
-                    assert len(cams) == len(poses_2d), 'Camera count mismatch'
-                    for cam in cams:
-                        if 'intrinsic' in cam:
-                            out_camera_params.append(cam['intrinsic'])
-
-                if parse_3d_poses and 'positions_3d' in dataset[subject][action]:
-                    poses_3d = dataset[subject][action]['positions_3d']
-                    assert len(poses_3d) == len(poses_2d), 'Camera count mismatch'
-                    for i in range(len(poses_3d)): # Iterate across cameras
-                        out_poses_3d.append(poses_3d[i])
-
-        if len(out_camera_params) == 0:
-            out_camera_params = None
-        if len(out_poses_3d) == 0:
-            out_poses_3d = None
-
-        stride = config['downsample']
-        if subset < 1:
-            for i in range(len(out_poses_2d)):
-                n_frames = int(round(len(out_poses_2d[i])//stride * subset)*stride)
-                start = deterministic_random(0, len(out_poses_2d[i]) - n_frames + 1, str(len(out_poses_2d[i])))
-                out_poses_2d[i] = out_poses_2d[i][start:start+n_frames:stride]
-                if out_poses_3d is not None:
-                    out_poses_3d[i] = out_poses_3d[i][start:start+n_frames:stride]
-        elif stride > 1:
-            # Downsample as requested
-            for i in range(len(out_poses_2d)):
-                out_poses_2d[i] = out_poses_2d[i][::stride]
-                if out_poses_3d is not None:
-                    out_poses_3d[i] = out_poses_3d[i][::stride]
-
-
-        return out_camera_params, out_poses_3d, out_poses_2d
 
     action_filter = None if config['actions'] == '*' else config['actions'].split(',')
     if action_filter is not None:
         print('Selected actions:', action_filter)
 
-    # set receptive_field as number assigned
+    # set receptive_field as number assigned # most have receptive_field as the frames 
     receptive_field = config['number_of_frames'] 
     print('INFO: Receptive field: {} frames'.format(receptive_field))
     pad = (receptive_field -1) // 2 # Padding on each side
-    min_loss = config['min_loss']
-    width = cam['res_w']
-    height = cam['res_h']
-    num_joints = keypoints_metadata['num_joints']
+
 
     # Load the model path from the config
     model_path = os.path.join(config['checkpoint'], config['evaluate'])
@@ -462,7 +390,7 @@ def main():
             print('Protocol #3 (N-MPJPE) action-wise average:', round(np.mean(errors_p3), 1), 'mm')
             print('Velocity      (MPJVE) action-wise average:', round(np.mean(errors_vel), 2), 'mm')
 
-
+        
         if not config['by_subject']:
             run_evaluation(all_actions, action_filter)
         else:

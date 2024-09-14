@@ -31,8 +31,8 @@ from datetime import datetime
 
 sys.path.append("/pub/bjvela/KTPFormer/common")  # Add the directory, not the full path to the file
 # Paths to the model files
-model_1_path = '/pub/bjvela/PoseLab3D/model_243_CPN_best_epoch.bin'
-model_2_path = '/pub/bjvela/PoseLab3D/checkpoint/CorrectSavedModel.pt'
+model_1_path = '/pub/bjvela/PoseLab3D/checkpoint/model_243_CPN_best_epoch.bin'
+model_2_path = '/pub/bjvela/PoseLab3D/CorrectSavedModel.pt'
 
 
 def load_state_dict_from_checkpoint_1(path):

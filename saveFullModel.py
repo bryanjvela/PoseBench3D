@@ -120,7 +120,7 @@ def main():
     
     # Construct adjacency matrices based on the loaded dataset and the number of frames
     construct_adjacency_matrices(dataset, MODEL_CONFIG["model_args"]["num_frame"])
-
+    
     # Load the model
     model = load_model()
     print("Model loaded successfully!")

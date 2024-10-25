@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from common.skeleton import Skeleton
 from common.mocap_dataset import MocapDataset
-from common.camera import normalize_screen_coordinates, image_coordinates
+from common.camera import normalize_screen_coordinates, image_coordinates, world_to_camera
 
 h36m_skeleton = Skeleton(parents=[-1,  0,  1,  2,  3,  4,  0,  6,  7,  8,  9,  0, 11, 12, 13, 14, 12,
        16, 17, 18, 19, 20, 19, 22, 12, 24, 25, 26, 27, 28, 27, 30],
@@ -243,4 +243,65 @@ class Human36mDataset(MocapDataset):
             
     def supports_semi_supervised(self):
         return True
+    
+    def preprocess(self, config):
+        print("Start pre-processing data from the H36M Class API")
+        # Prepare data for use
+        print('Preparing data...')
+        for subject in self.subjects():
+            for action in self[subject].keys():
+                anim = self[subject][action]
+
+                if 'positions' in anim:
+                    positions_3d = []
+                    for cam in anim['cameras']:
+                        pos_3d = world_to_camera(anim['positions'], R=cam['orientation'], t=cam['translation'])
+                        pos_3d[:, 1:] -= pos_3d[:, :1]  # Remove global offset, but keep trajectory in the first position
+                        positions_3d.append(pos_3d)
+                    anim['positions_3d'] = positions_3d
+
+        # Load 2D keypoints
+        print('Loading 2D detections...')
+        keypoints = np.load(f"data/data_2d_{config['dataset']}_{config['keypoints']}.npz", allow_pickle=True)
+        keypoints_metadata = keypoints['metadata'].item()
+        keypoints_symmetry = keypoints_metadata['keypoints_symmetry']
+        
+        # Store these variables as attributes of the object
+        self.kps_left = list(keypoints_symmetry[0])
+        self.kps_right = list(keypoints_symmetry[1])
+        self.joints_left = list(self.skeleton().joints_left())
+        self.joints_right = list(self.skeleton().joints_right())
+        self.keypoints = keypoints['positions_2d'].item()
+
+        for subject in self.subjects():
+            assert subject in self.keypoints, f'Subject {subject} is missing from the 2D detections dataset'
+            for action in self[subject].keys():
+                assert action in self.keypoints[subject], f'Action {action} of subject {subject} is missing from the 2D detections dataset'
+                if 'positions_3d' not in self[subject][action]:
+                    continue
+
+                for cam_idx in range(len(self.keypoints[subject][action])):
+                    mocap_length = self[subject][action]['positions_3d'][cam_idx].shape[0]
+                    assert self.keypoints[subject][action][cam_idx].shape[0] >= mocap_length
+
+                    if self.keypoints[subject][action][cam_idx].shape[0] > mocap_length:
+                        # Shorten sequence
+                        self.keypoints[subject][action][cam_idx] = self.keypoints[subject][action][cam_idx][:mocap_length]
+
+                assert len(self.keypoints[subject][action]) == len(self[subject][action]['positions_3d'])
+
+        for subject in self.keypoints.keys():
+            for action in self.keypoints[subject]:
+                for cam_idx, kps in enumerate(self.keypoints[subject][action]):
+                    # Normalize camera frame
+                    cam = self.cameras()[subject][cam_idx]
+                    kps[..., :2] = normalize_screen_coordinates(kps[..., :2], w=cam['res_w'], h=cam['res_h'])
+                    self.keypoints[subject][action][cam_idx] = kps
+
+        # Determine subjects for testing or rendering
+        if not config['render']:
+            self.subjects_test = config['subjects_test'].split(',')
+        else:
+            self.subjects_test = [config['viz_subject']]
+        print("Finished pre-processing data from the H36M Class API")
    

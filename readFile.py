@@ -11,7 +11,7 @@ import yaml
 
 from common.camera import *
 from common.loss import *
-from common.generators import UnchunkedGenerator_Seq
+from common.generators import Evaluate_Generator
 from common.utils import *
 
 
@@ -65,9 +65,9 @@ def main():
 
     # Model API Logic 
     from model import Model
-    model_instance = Model(config) # Instantiate the model class  
-    model_instance.load_model(config) # Load model with checkpoint
-    model_instance.eval_h36m(dataset) # Evaluate model on h36m
+    model_instance = Model(config) # Instantiate the model class  with the .yaml config file 
+    model_instance.load_model(config) # Load the saved model with binary checkpoint
+    model_instance.eval_h36m(dataset) # Evaluate model on h36m dataset 
 
 if __name__ == "__main__":
      main()

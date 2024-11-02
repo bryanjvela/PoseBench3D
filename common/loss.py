@@ -1,30 +1,91 @@
-from matplotlib.pyplot import bone
+# Copyright (c) 2018-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+#
+
 import torch
 import numpy as np
+#from tqdm import tqdm
 
-def mpjpe(predicted, target, return_joints_err=False):
+bone_pairs = [(1,0), (2,1), (3,2), (4,0), (5,4), (6,5), (7,0), (8,7),
+            (9,8), (10,9), (11,8), (12,11), (13,12), (14,8), (15,14), (16,15)]
+
+def mpjpe(predicted, target):
     """
     Mean per-joint position error (i.e. mean Euclidean distance),
     often referred to as "Protocol #1" in many papers.
     """
     assert predicted.shape == target.shape
-    if not return_joints_err:
-        return torch.mean(torch.norm(predicted - target, dim=len(target.shape)-1))
-    else:
-        errors = torch.norm(predicted - target, dim=len(target.shape)-1)
-        # errors: [B, T, N]
-        from einops import rearrange
-        errors = rearrange(errors, 'B T N -> N (B T)')
-        errors = torch.mean(errors, dim=-1).cpu().numpy().reshape(-1) * 1000
-        return torch.mean(torch.norm(predicted - target, dim=len(target.shape)-1)), errors
-    
-def weighted_mpjpe(predicted, target, w):
+    return torch.mean(torch.norm(predicted - target, dim=len(target.shape)-1))
+
+def mpjpe_noise(predicted, target):
     """
-    Weighted mean per-joint position error (i.e. mean Euclidean distance)
+    Mean per-joint position error (i.e. mean Euclidean distance),
+    often referred to as "Protocol #1" in many papers.
     """
     assert predicted.shape == target.shape
-    # assert w.shape[0] == predicted.shape[0]
-    return torch.mean(w * torch.norm(predicted - target, dim=len(target.shape)-1))
+    target_pos = list(range(0,17))
+    target_pos = np.random.choice(target_pos)
+    #target_pos_2 = np.random.choice(target_pos)
+    #print(target_pos)
+    target[:,:,target_pos,:] = 0
+    #target[target_pos[1]]=0
+    return torch.mean(torch.norm(predicted - target, dim=len(target.shape)-1))
+
+def mpble(predicted, target):
+    """
+    Mean per-bone length error (i.e. mean Euclidean distance),
+    """
+    N, _, V, T = predicted.size()
+    bone_length_loss = []
+    for (v1, v2) in bone_pairs:
+        predicted_bone = predicted[:,:,v1,:] - predicted[:,:,v2,:]
+        predicted_bone_len = (predicted_bone.view(N,-1)*predicted_bone.view(N,-1)).sum(dim=1)**0.5
+        target_bone = target[:,:,v1,:] - target[:,:,v2,:]
+        target_bone_len = (target_bone.view(N,-1)*target_bone.view(N,-1)).sum(dim=1)**0.5
+        #print('predicted_bone.size()',target_bone_len.size())
+        #print('predicted_bone',target_bone_len)
+        bone_length_loss.append(torch.mean(torch.norm(predicted_bone_len - target_bone_len, dim=len(target_bone_len.shape)-1)))
+    #print()
+    return 0.025 * sum(bone_length_loss)/16
+
+def mpbde(predicted, target):
+    """
+    Mean per-bone direction error (i.e. mean ( 1- cos_theta) distance),
+    """
+    N, _, V, T = predicted.size()
+    bone_direction_loss = []
+    for (v1, v2) in bone_pairs:
+        predicted_bone = predicted[:,:,v1,:] - predicted[:,:,v2,:]
+        predicted_bone_len = (predicted_bone.view(N,-1)*predicted_bone.view(N,-1)).sum(dim=1)**0.5
+        target_bone = target[:,:,v1,:] - target[:,:,v2,:]
+        target_bone_len = (target_bone.view(N,-1)*target_bone.view(N,-1)).sum(dim=1)**0.5
+
+        dot_product = (predicted_bone.view(N,-1)*target_bone.view(N,-1)).sum(dim=1)
+        cos_theda = dot_product/(predicted_bone_len*target_bone_len)
+
+        bone_direction_loss.append(torch.mean((1 - cos_theda), dim=len(cos_theda.shape)-1))
+
+    return 0.5 * sum(bone_direction_loss)/16
+
+def mpjpe_(predicted, target):
+    """
+    Mean per-joint position error (i.e. mean Euclidean distance),
+    often referred to as "Protocol #1" in many papers.
+    """
+    assert predicted.shape == target.shape
+    #print('predicted.shape: ',predicted.shape) # predicted.shape:  torch.Size([64, 1, 17, 3])
+    N, _, V, T = predicted.size()
+    predicted_bone = torch.from_numpy(np.full((N, 1, 17, 3),0).astype('float32')).cuda(2)
+    target_bone = torch.from_numpy(np.full((N, 1, 17, 3),0).astype('float32')).cuda(2)
+    for (v1, v2) in bone_pairs:
+        predicted_bone[:,:,v1,:] = predicted[:,:,v1,:] - predicted[:,:,v2,:]
+        target_bone[:,:,v1,:] = target[:,:,v1,:] - target[:,:,v2,:]
+
+    return torch.mean(torch.norm(predicted - target, dim=len(target.shape)-1)),\
+        torch.mean(torch.norm(predicted_bone - target_bone, dim=len(target.shape)-1))
 
 def p_mpjpe(predicted, target):
     """
@@ -32,16 +93,16 @@ def p_mpjpe(predicted, target):
     often referred to as "Protocol #2" in many papers.
     """
     assert predicted.shape == target.shape
-    
+
     muX = np.mean(target, axis=1, keepdims=True)
     muY = np.mean(predicted, axis=1, keepdims=True)
-    
+
     X0 = target - muX
     Y0 = predicted - muY
 
     normX = np.sqrt(np.sum(X0**2, axis=(1, 2), keepdims=True))
     normY = np.sqrt(np.sum(Y0**2, axis=(1, 2), keepdims=True))
-    
+
     X0 /= normX
     Y0 /= normY
 
@@ -60,82 +121,37 @@ def p_mpjpe(predicted, target):
 
     a = tr * normX / normY # Scale
     t = muX - a*np.matmul(muY, R) # Translation
-    
+
     # Perform rigid transformation on the input
     predicted_aligned = a*np.matmul(predicted, R) + t
-    
+
     # Return MPJPE
     return np.mean(np.linalg.norm(predicted_aligned - target, axis=len(target.shape)-1))
-    
-def n_mpjpe(predicted, target):
-    """
-    Normalized MPJPE (scale only), adapted from:
-    https://github.com/hrhodin/UnsupervisedGeometryAwareRepresentationLearning/blob/master/losses/poses.py
-    """
-    assert predicted.shape == target.shape
-    
-    norm_predicted = torch.mean(torch.sum(predicted**2, dim=3, keepdim=True), dim=2, keepdim=True)
-    norm_target = torch.mean(torch.sum(target*predicted, dim=3, keepdim=True), dim=2, keepdim=True)
-    scale = norm_target / norm_predicted
-    return mpjpe(scale * predicted, target)
 
-
-def mean_velocity_error_train(predicted, target, axis=0):
+def mpjme(predicted_seq, target_seq, interval_set = [12]): # [N, 27, 17, 3]
     """
-    Mean per-joint velocity error (i.e. mean Euclidean distance of the 1st derivative)
+    Mean per-joint motion error (i.e. mean Euclidean distance), Abalations: multiple intervals, individual interval
     """
-    assert predicted.shape == target.shape
-    
-    velocity_predicted = torch.diff(predicted, dim=axis)
-    velocity_target = torch.diff(target, dim=axis)
+    assert predicted_seq.shape == target_seq.shape
+    frames_len = predicted_seq.size()[1]
+    loss_mpjme = 0
+    for interval in interval_set:
+        if interval > (frame_len -1) /2:
+            continue
+        for i in range( int((frames_len/2 + 1)/interval) ): # interval boundary
+            #forward
+            target_f = target_seq[:,frames_len/2+1 + interval,:,:] - target_seq[:,frames_len/2+1,:,:]
+            predicted_f = predicted_seq[:,frames_len/2+1 + interval,:,:] - predicted_seq[:,frames_len/2+1,:,:]
+            #backword
+            target_b = target_seq[:,frames_len/2+1,:,:] - target_seq[:,frames_len/2+1 - interval,:,:]
+            predicted_b = predicted_seq[:,frames_len/2+1,:,:] - predicted_seq[:,frames_len/2+1 - interval,:,:]
+            loss_mpjme = loss_mpjme + torch.mean(torch.norm(predicted_f - target_f, dim=len(target_f.shape)-1)) + \
+                                      torch.mean(torch.norm(predicted_b - target_b, dim=len(target_b.shape)-1))
 
-    return torch.mean(torch.norm(velocity_predicted - velocity_target, dim=len(target.shape)-1))
+    return loss_mpjme
 
-def mean_velocity_error(predicted, target, axis=0):
+def mpjse(predicted_seq, target_seq, interval_set = [12]):
     """
-    Mean per-joint velocity error (i.e. mean Euclidean distance of the 1st derivative)
+    Mean per-joint speed error (i.e. mean Euclidean distance),
     """
-    assert predicted.shape == target.shape
-
-    velocity_predicted = np.diff(predicted, axis=axis)
-    velocity_target = np.diff(target, axis=axis)
-    
-    return np.mean(np.linalg.norm(velocity_predicted - velocity_target, axis=len(target.shape)-1))
-
-def sym_penalty(dataset,keypoints,pred_out):
-    """
-    get penalty for the symmetry of human body
-    :return:
-    """
-    loss_sym = 0
-    if dataset == 'h36m':
-        if keypoints.startswith('hr'):
-            left_bone = [(0,4),(4,5),(5,6),(8,10),(10,11),(11,12)]
-            right_bone = [(0,1),(1,2),(2,3),(8,13),(13,14),(14,15)]
-        else:
-            left_bone = [(0,4),(4,5),(5,6),(8,11),(11,12),(12,13)]
-            right_bone = [(0,1),(1,2),(2,3),(8,14),(14,15),(15,16)]
-        for (i_left,j_left),(i_right,j_right) in zip(left_bone,right_bone):
-            left_part = pred_out[:,:,i_left]-pred_out[:,:,j_left]
-            right_part = pred_out[:, :, i_right] - pred_out[:, :, j_right]
-            loss_sym += torch.mean(torch.abs(torch.norm(left_part, dim=-1) - torch.norm(right_part, dim=-1)))
-    elif dataset.startswith('STB'):
-        loss_sym = 0
-    return 0.01*loss_sym
-
-def bonelen_consistency_loss(dataset,keypoints,pred_out):
-    loss_length = 0
-    if dataset == 'h36m':
-        if keypoints.startswith('hr'):
-            assert "hrnet has not completed"
-        else:
-            bones = [(0,1), (0,4), (1,2), (2,3), (4,5), (5,6), (0,7), (7,8), (8,9), (9,10), 
-                    (8,11), (11,12), (12,13), (8,14), (14,15), (15,16)]
-        for (i,j) in bones:
-            bonelen = pred_out[:,:,i]-pred_out[:,:,j]
-            bone_diff = bonelen[:,1:,:]-bonelen[:,:-1,:]
-            loss_length += torch.mean(torch.norm(bone_diff, dim=-1))
-    elif dataset.startswith('heva'):
-        loss_length = 0
-
-    return 0.01 * loss_length
+    assert predicted_seq.shape == target_seq.shape

@@ -22,6 +22,7 @@ def get_resolution(filename):
             w, h = line.decode().strip().split(',')
             return int(w), int(h)
 
+
 def get_fps(filename):
     command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
                '-show_entries', 'stream=r_frame_rate', '-of', 'csv=p=0', filename]
@@ -30,20 +31,23 @@ def get_fps(filename):
             a, b = line.decode().strip().split('/')
             return int(a) / int(b)
 
+
 def read_video(filename, skip=0, limit=-1):
     w, h = get_resolution(filename)
+    # w = 1000
+    # h = 1002
 
     command = ['ffmpeg',
-            '-i', filename,
-            '-f', 'image2pipe',
-            '-pix_fmt', 'rgb24',
-            '-vsync', '0',
-            '-vcodec', 'rawvideo', '-']
+               '-i', filename,
+               '-f', 'image2pipe',
+               '-pix_fmt', 'rgb24',
+               '-vsync', '0',
+               '-vcodec', 'rawvideo', '-']
 
     i = 0
-    with sp.Popen(command, stdout = sp.PIPE, bufsize=-1) as pipe:
+    with sp.Popen(command, stdout=sp.PIPE, bufsize=-1) as pipe:
         while True:
-            data = pipe.stdout.read(w*h*3)
+            data = pipe.stdout.read(w * h * 3)
             if not data:
                 break
             i += 1
@@ -53,14 +57,13 @@ def read_video(filename, skip=0, limit=-1):
                 yield np.frombuffer(data, dtype='uint8').reshape((h, w, 3))
 
 
-
-
 def downsample_tensor(X, factor):
-    length = X.shape[0]//factor * factor
+    length = X.shape[0] // factor * factor
     return np.mean(X[:length].reshape(-1, factor, *X.shape[1:]), axis=1)
 
+
 def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrate, azim, output, viewport,
-                     limit=-1, downsample=1, size=6, input_video_path=None, input_video_skip=0):
+                     limit=-1, downsample=1, size=6, input_video_path=None, input_video_skip=0, newpose=None):
     """
     TODO
     Render an animation. The supported output modes are:
@@ -71,24 +74,47 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
      -- 'filename.gif': render and export the animation a gif file (requires imagemagick).
     """
     plt.ioff()
-    fig = plt.figure(figsize=(size*(1 + len(poses)), size))
-    ax_in = fig.add_subplot(1, 1 + len(poses), 1)
+    if newpose is not None:
+        fig = plt.figure(figsize=(size * (1 + len(poses) + len(newpose)), size))
+        ax_in = fig.add_subplot(1, 1 + len(poses) + len(newpose), 1)
+    else:
+        fig = plt.figure(figsize=(size * (1 + len(poses)), size))
+        ax_in = fig.add_subplot(1, 1 + len(poses), 1)
+    
     ax_in.get_xaxis().set_visible(False)
     ax_in.get_yaxis().set_visible(False)
     ax_in.set_axis_off()
     ax_in.set_title('Input')
 
     ax_3d = []
-    joints_3d = []
     lines_3d = []
     trajectories = []
     radius = 1.7
+    if newpose is not None:
+        axnew = fig.add_subplot(1, 1 + len(poses) + len(newpose), 2, projection='3d')
+        axnew.view_init(elev=15., azim=azim)
+        axnew.set_xlim3d([-radius / 2, radius / 2])
+        axnew.set_zlim3d([0, radius])
+        axnew.set_ylim3d([-radius / 2, radius / 2])
+        try:
+            axnew.set_aspect('equal')
+        except NotImplementedError:
+            axnew.set_aspect('auto')
+        axnew.set_xticklabels([])
+        axnew.set_yticklabels([])
+        axnew.set_zticklabels([])
+        axnew.dist = 7.5
+        axnew.set_title('PoseFormer') #, pad=35
+        ax_3d.append(axnew)
+        lines_3d.append([])
+        trajectories.append(newpose[:, 0, [0, 1]])
+
     for index, (title, data) in enumerate(poses.items()):
-        ax = fig.add_subplot(1, 1 + len(poses), index+2, projection='3d')
+        ax = fig.add_subplot(1, 1 + len(poses), index + 2, projection='3d')
         ax.view_init(elev=15., azim=azim)
-        ax.set_xlim3d([-radius/2, radius/2])
+        ax.set_xlim3d([-radius / 2, radius / 2])
         ax.set_zlim3d([0, radius])
-        ax.set_ylim3d([-radius/2, radius/2])
+        ax.set_ylim3d([-radius / 2, radius / 2])
         try:
             ax.set_aspect('equal')
         except NotImplementedError:
@@ -99,7 +125,6 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
         ax.dist = 7.5
         ax.set_title(title) #, pad=35
         ax_3d.append(ax)
-        joints_3d.append([])
         lines_3d.append([])
         trajectories.append(data[:, 0, [0, 1]])
     poses = list(poses.values())
@@ -119,6 +144,8 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
         keypoints = keypoints[input_video_skip:] # todo remove
         for idx in range(len(poses)):
             poses[idx] = poses[idx][input_video_skip:]
+        if newpose is not None:
+            newpose = newpose[input_video_skip:]
 
         if fps is None:
             fps = get_fps(input_video_path)
@@ -126,16 +153,22 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
     if downsample > 1:
         keypoints = downsample_tensor(keypoints, downsample)
         all_frames = downsample_tensor(np.array(all_frames), downsample).astype('uint8')
-        for idx in range(len(poses)):
-            poses[idx] = downsample_tensor(poses[idx], downsample)
-            trajectories[idx] = downsample_tensor(trajectories[idx], downsample)
+        if newpose is not None:
+            newpose = downsample_tensor(newpose, downsample)
+            for idx in range(len(poses)+len(newpose)):
+                poses[idx] = downsample_tensor(poses[idx], downsample)
+                trajectories[idx] = downsample_tensor(trajectories[idx], downsample)
+        else:
+            for idx in range(len(poses)):
+                poses[idx] = downsample_tensor(poses[idx], downsample)
+                trajectories[idx] = downsample_tensor(trajectories[idx], downsample)
+        
         fps /= downsample
 
     initialized = False
     image = None
     lines = []
     points = None
-    #joints_3d = None
 
     if limit < 1:
         limit = len(all_frames)
@@ -152,7 +185,7 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
 
         # Update 2D poses
         joints_right_2d = keypoints_metadata['keypoints_symmetry'][1]
-        colors_2d = np.full(keypoints.shape[1], 'blue')
+        colors_2d = np.full(keypoints.shape[1], 'black')
         colors_2d[joints_right_2d] = 'red'
         if not initialized:
             image = ax_in.imshow(all_frames[i], aspect='equal')
@@ -164,48 +197,37 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
                 if len(parents) == keypoints.shape[1] and keypoints_metadata['layout_name'] != 'coco':
                     # Draw skeleton only if keypoints match (otherwise we don't have the parents definition)
                     lines.append(ax_in.plot([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
-                                            [keypoints[i, j, 1], keypoints[i, j_parent, 1]], color='white'))
+                                            [keypoints[i, j, 1], keypoints[i, j_parent, 1]], color='pink'))
 
-                col = 'red' if j in skeleton.joints_right() else 'blue'
+                col = 'orange' if j in skeleton.joints_right() else 'green'
+                
                 for n, ax in enumerate(ax_3d):
                     pos = poses[n][i]
-                    #print('pos',pos)
-                    joints_3d[n].append(ax.scatter(pos[j,0],pos[j,1],pos[j,2],s=50, c=col, animated=True))
-
                     lines_3d[n].append(ax.plot([pos[j, 0], pos[j_parent, 0]],
                                                [pos[j, 1], pos[j_parent, 1]],
                                                [pos[j, 2], pos[j_parent, 2]], zdir='z', c=col))
-
-            #for n, ax in enumerate(ax_3d):
-            #    joints_3d[n].append(ax.scatter(*poses[n][i].T,s=50, c=col))
-
+            # Plot 2D keypoints
             points = ax_in.scatter(*keypoints[i].T, 10, color=colors_2d, edgecolors='white', zorder=10)
 
             initialized = True
         else:
             image.set_data(all_frames[i])
-            #print('#### keypoints[i]: ',keypoints[i])
+
             for j, j_parent in enumerate(parents):
                 if j_parent == -1:
                     continue
 
                 if len(parents) == keypoints.shape[1] and keypoints_metadata['layout_name'] != 'coco':
                     lines[j-1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
-                                           [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
+                                             [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
 
+                # Plot 2D keypoints
                 for n, ax in enumerate(ax_3d):
                     pos = poses[n][i]
-                    joints_3d[n][j-1]._offsets3d = (np.ma.ravel(pos[j,0]),np.ma.ravel(pos[j,1]),np.ma.ravel(pos[j,2]))
-                    #joints_3d[n][j-1][0].set_xdata(pos[j,0])
-                    #joints_3d[n][j-1][0].set_ydata(pos[j,1])
-                    #joints_3d[n][j-1][0].set_3d_properties(pos[j,2])
-
                     lines_3d[n][j-1][0].set_xdata(np.array([pos[j, 0], pos[j_parent, 0]]))
                     lines_3d[n][j-1][0].set_ydata(np.array([pos[j, 1], pos[j_parent, 1]]))
                     lines_3d[n][j-1][0].set_3d_properties(np.array([pos[j, 2], pos[j_parent, 2]]), zdir='z')
-
-            #for n, ax in enumerate(ax_3d):
-            #    joints_3d[n][0].set_offsets(poses[n][i])
+            # Plot 2D keypoints
             points.set_offsets(keypoints[i])
 
         print('{}/{}      '.format(i, limit), end='\r')
@@ -219,7 +241,7 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
         writer = Writer(fps=fps, metadata={}, bitrate=bitrate)
         anim.save(output, writer=writer)
     elif output.endswith('.gif'):
-        anim.save(output, dpi=300, writer='imagemagick')
+        anim.save(output, dpi=80, writer='imagemagick')
     else:
         raise ValueError('Unsupported output format (only .mp4 and .gif are supported)')
     plt.close()

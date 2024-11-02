@@ -1,7 +1,7 @@
 # General arguments
-model_location: '/pub/bjvela/GLA-GCN/common'
+model_location: '/pub/bjvela/GLA-GCN/gla_common'
 dataset: 'h36m'
-keypoints: 'gt'
+keypoints: 'cpn_ft_h36m_dbb'
 subjects_train: 'S1,S5,S6,S7,S8'
 subjects_test: 'S9,S11'
 actions: '*'
@@ -21,7 +21,7 @@ dropout: 0.1
 learning_rate: 0.01
 lr_decay: 0.95
 data_augmentation: false
-test_time_augmentation: false
+test_time_augmentation: true
 architecture: '3,3,3,3,3'
 causal: false
 channels: 96

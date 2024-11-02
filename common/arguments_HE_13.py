@@ -11,30 +11,36 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Training script')
 
     # General arguments
-    parser.add_argument('-d', '--dataset', default='h36m', type=str, metavar='NAME', help='target dataset') # h36m or humaneva
-    parser.add_argument('-k', '--keypoints', default='gt', type=str, metavar='NAME', help='2D detections to use') # cpn_ft_h36m_dbb， sh_ft_h36m， sh_pt_mpii
-    parser.add_argument('-str', '--subjects-train', default='S1,S5,S6,S7,S8', type=str, metavar='LIST', help='training subjects separated by comma')
-    parser.add_argument('-ste', '--subjects-test', default='S9,S11', type=str, metavar='LIST', help='test subjects separated by comma')
+    parser.add_argument('-d', '--dataset', default='humaneva15', type=str, metavar='NAME', help='target dataset') # h36m or humaneva
+    parser.add_argument('-k', '--keypoints', default='detectron_pt_coco', type=str, metavar='NAME', help='2D detections to use') # detectron_pt_coco gt
+    parser.add_argument('-str', '--subjects-train', default='Train/S1,Train/S2,Train/S3', type=str, metavar='LIST', help='training subjects separated by comma')
+    parser.add_argument('-ste', '--subjects-test', default='Validate/S1,Validate/S2,Validate/S3', type=str, metavar='LIST', help='test subjects separated by comma')
 
-    parser.add_argument('-a', '--actions', default='*', type=str, metavar='LIST', help='actions to train/test on, separated by comma, or * for all')
-    parser.add_argument('-c', '--checkpoint', default='checkpoint/h36m', type=str, metavar='PATH', help='checkpoint directory')
-    parser.add_argument('--checkpoint-frequency', default=10, type=int, metavar='N', help='create a checkpoint every N epochs')
-    parser.add_argument('-r', '--resume', default='', type=str, metavar='FILENAME', help='checkpoint to resume (file name)')
+    parser.add_argument('-a', '--actions', default='Walk,Jog,Box', type=str, metavar='LIST',
+                        help='actions to train/test on, separated by comma, or * for all') # Walk,Jog,Box
+    parser.add_argument('-c', '--checkpoint', default='/media/bruce/ssd1/data/video3d/VideoPose3d/training/checkpoint_agcn_HE_13_1', type=str, metavar='PATH',
+                        help='checkpoint directory')
+    parser.add_argument('--checkpoint-frequency', default=10, type=int, metavar='N',
+                        help='create a checkpoint every N epochs')
+    parser.add_argument('-r', '--resume', default='', type=str, metavar='FILENAME',
+                        help='checkpoint to resume (file name)')
     parser.add_argument('--evaluate', default='', type=str, metavar='FILENAME', help='checkpoint to evaluate (file name)')
     parser.add_argument('--render', action='store_true', help='visualize a particular video')
-    parser.add_argument('--by-subject', action='store_true', help='break down error by subject (on evaluation)')
+    parser.add_argument('--by-subject', action='store_false', help='break down error by subject (on evaluation)')
     parser.add_argument('--export-training-curves', action='store_false', help='save training curves as .png images')
 
     # Model arguments
     parser.add_argument('-s', '--stride', default=1, type=int, metavar='N', help='chunk size to use during training')
-    parser.add_argument('-e', '--epochs', default=80, type=int, metavar='N', help='number of training epochs')
-    parser.add_argument('-b', '--batch-size', default=512, type=int, metavar='N', help='batch size in terms of predicted frames')
+    parser.add_argument('-e', '--epochs', default=1000, type=int, metavar='N', help='number of training epochs')
+    parser.add_argument('-b', '--batch-size', default=1024, type=int, metavar='N', help='batch size in terms of predicted frames')
     parser.add_argument('-drop', '--dropout', default=0.1, type=float, metavar='P', help='dropout probability')
     parser.add_argument('-lr', '--learning-rate', default=0.01, type=float, metavar='LR', help='initial learning rate')
     parser.add_argument('-lrd', '--lr-decay', default=0.95, type=float, metavar='LR', help='learning rate decay per epoch')
-    parser.add_argument('-da', '--data-augmentation', dest='data_augmentation', action='store_true', help='disable train-time flipping')
-    parser.add_argument('-tta', '--test-time-augmentation', dest='test_time_augmentation', action='store_true', help='disable test-time flipping')
-    parser.add_argument('-arc', '--architecture', default='3,3,3,3,3', type=str, metavar='LAYERS', help='filter widths separated by comma')
+    parser.add_argument('-da', '--data-augmentation', dest='data_augmentation', action='store_true',
+                        help='disable train-time flipping')
+    parser.add_argument('-tta', '--test-time-augmentation', dest='test_time_augmentation', action='store_true',
+                        help='disable test-time flipping')
+    parser.add_argument('-arc', '--architecture', default='3,3,3', type=str, metavar='LAYERS', help='filter widths separated by comma')
     parser.add_argument('--causal', action='store_true', help='use causal convolutions for real-time processing')
     parser.add_argument('-ch', '--channels', default=96, type=int, metavar='N', help='number of channels in convolution layers')
 
@@ -62,10 +68,7 @@ def parse_args():
     parser.add_argument('--viz-limit', type=int, default=-1, metavar='N', help='only render first N frames')
     parser.add_argument('--viz-downsample', type=int, default=1, metavar='N', help='downsample FPS by a factor N')
     parser.add_argument('--viz-size', type=int, default=5, metavar='N', help='image size')
-#python run.py -k cpn_ft_h36m_dbb -arc 3,3,3,3,3 -c checkpoint --evaluate pretrained_h36m_cpn.bin
-#              --render --viz-subject S11 --viz-action Walking --viz-camera 0 --viz-video "/media/bruce/ssd1/data/video3d/Walking1.58860488.mp4"
-#              --viz-output output.gif --viz-size 3 --viz-downsample 2 --viz-limit 60
-#python run_agcn_c96_dp.py -da -tta --evaluate 96_cpn_ft_h36m_dbb_243_supervised_epoch_71.bin --render --viz-subject S11 --viz-action 'Walking 1' --viz-camera 2 --viz-video "/media/bruce/ssd1/data/video3d/Walking1.58860488.mp4" --viz-output output.mp4 --viz-limit 1637
+
     parser.set_defaults(bone_length_term=True)
     parser.set_defaults(data_augmentation=False)
     parser.set_defaults(test_time_augmentation=False)

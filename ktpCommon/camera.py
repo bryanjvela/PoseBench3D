@@ -1,10 +1,3 @@
-# Copyright (c) 2018-present, Facebook, Inc.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-#
-
 import numpy as np
 import torch
 
@@ -88,3 +81,48 @@ def project_to_2d_linear(X, camera_params):
     XX = torch.clamp(X[..., :2] / X[..., 2:], min=-1, max=1)
     
     return f*XX + c
+
+def uvd2xyz(uvd, gt_3D, cam):
+    """
+    transfer uvd to xyz
+    :param uvd: N*T*V*3 (uv and z channel)
+    :param gt_3D: N*T*V*3 (NOTE: V=0 is absolute depth value of root joint)
+    :return: root-relative xyz results
+    """
+    N, T, V,_ = uvd.size()
+
+
+    dec_out_all = uvd.view(-1, T, V, 3).clone()  # N*T*V*3
+    root = gt_3D[:, :, 0, :].unsqueeze(-2).repeat(1, 1, V, 1).clone()# N*T*V*3
+    enc_in_all = uvd[:, :, :, :2].view(-1, T, V, 2).clone()  # N*T*V*2
+
+    cam_f_all = cam[..., :2].view(-1,1,1,2).repeat(1,T,V,1) # N*T*V*2
+    cam_c_all = cam[..., 2:4].view(-1,1,1,2).repeat(1,T,V,1)# N*T*V*2
+
+    # change to global
+    z_global = dec_out_all[:, :, :, 2]# N*T*V
+    z_global[:, :, 0] = root[:, :, 0, 2]
+    z_global[:, :, 1:] = dec_out_all[:, :, 1:, 2] + root[:, :, 1:, 2]  # N*T*V
+    z_global = z_global.unsqueeze(-1)  # N*T*V*1
+    
+    uv = enc_in_all - cam_c_all  # N*T*V*2
+    xy = uv * z_global.repeat(1, 1, 1, 2) / cam_f_all  # N*T*V*2
+    xyz_global = torch.cat((xy, z_global), -1)  # N*T*V*3
+    xyz_offset = (xyz_global - xyz_global[:, :, 0, :].unsqueeze(-2).repeat(1, 1, V, 1))# N*T*V*3
+
+
+    return xyz_offset
+
+
+
+
+def world2camera(pt, Rw2c, Tw2c):
+        """
+
+        :return:
+        """
+        if isinstance(pt, np.ndarray):
+            return pt @ Rw2c.T + Tw2c.T
+        else:
+            return pt @ torch.from_numpy(Rw2c.T).float().to(pt.device) + torch.from_numpy(Tw2c.T).float().to(pt.device)
+

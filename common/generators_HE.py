@@ -7,7 +7,8 @@
 
 from itertools import zip_longest
 import numpy as np
-from . import tools
+#from . import tools
+import tools
 import torch
 
 class ChunkedGenerator:
@@ -306,10 +307,10 @@ class Augmented_Train_ChunkedGenerator:
                         if random_move: # bruce
                             # batch_3d: torch.Size([64, 1, 17, 3])
                             b_3d = torch.from_numpy(self.batch_3d[i, :, :, :]).float()
-                            b_3d = b_3d.permute(2,0,1).view(3,1,17,1)
+                            b_3d = b_3d.permute(2,0,1).view(3,1,15,1)
                             b_3d = tools.random_move(b_3d.numpy())#.view(3,1,17,1)
                             b_3d = torch.from_numpy(b_3d).float()
-                            b_3d = b_3d.view(3,1,17).permute(1,2,0)
+                            b_3d = b_3d.view(3,1,15).permute(1,2,0)
                             self.batch_3d[i, :, :, :] = b_3d.numpy()
 
                     # Cameras

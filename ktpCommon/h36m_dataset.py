@@ -304,47 +304,4 @@ class Human36mDataset(MocapDataset):
         else:
             self.subjects_test = [config['viz_subject']]
         print("Finished pre-processing data from the H36M Class API")
-
-    def fetch_actions(self, actions, config):
-        out_poses_3d = []
-        out_poses_2d = []
-
-        for subject, action in actions:
-            poses_2d = self.keypoints[subject][action]
-            for i in range(len(poses_2d)): # Iterate across cameras
-                out_poses_2d.append(poses_2d[i])
-
-            poses_3d = self._data[subject][action]['positions_3d']
-            assert len(poses_3d) == len(poses_2d), 'Camera count mismatch'
-            for i in range(len(poses_3d)): # Iterate across cameras
-                out_poses_3d.append(poses_3d[i])
-
-        stride = config['downsample']
-        if stride > 1:
-            # Downsample as requested
-            for i in range(len(out_poses_2d)):
-                out_poses_2d[i] = out_poses_2d[i][::stride]
-                if out_poses_3d is not None:
-                    out_poses_3d[i] = out_poses_3d[i][::stride]
-
-        return out_poses_3d, out_poses_2d
-
-    def organize_actions(self):
-        all_actions = {}
-        all_actions_by_subject = {}
-
-        for subject in self.subjects_test:
-            if subject not in all_actions_by_subject:
-                all_actions_by_subject[subject] = {}
-
-            for action in self._data[subject].keys():
-                action_name = action.split(' ')[0]
-                if action_name not in all_actions:
-                    all_actions[action_name] = []
-                if action_name not in all_actions_by_subject[subject]:
-                    all_actions_by_subject[subject][action_name] = []
-                all_actions[action_name].append((subject, action))
-                all_actions_by_subject[subject][action_name].append((subject, action))
-
-        return all_actions, all_actions_by_subject
    

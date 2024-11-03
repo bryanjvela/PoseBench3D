@@ -1,29 +1,22 @@
-import numpy as np
 import argparse
 import torch
 
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import os
 import sys
 import yaml
-
-from common.camera import *
-from common.loss import *
-from common.generators import Evaluate_Generator
-from common.utils import *
+from model import Model
+from evaluation import Evaluation
 
 
 def load_config(config_path):
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
+    #print(type(config))
     return config
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script requires a YAML configuration file.")
     
-    # Provide a more detailed help message with an example usage
     parser.add_argument(
         '-cfg', 
         '--config', 
@@ -40,8 +33,8 @@ def main():
     
     args = parse_args()                  # Parse the command-line argument for the config file
     config = load_config(args.config)    # Load the config from the specified YAML file
-
-    sys.path.append(config['model_location'])  # Add the directory, not the full path to the file
+    #print(type(config))
+    #sys.path.append(config['model_location'])  # Add the directory, not the full path to the file
 
     print("Evaluating!")
     print('python ' + ' '.join(sys.argv))
@@ -53,6 +46,8 @@ def main():
         print("Namespace(" + ", ".join(config_items) + ")")
     print_config_namespace_style(config)
 
+
+
     # Dataset loading 
     print('Loading dataset...')
     dataset_path = 'data/data_3d_' + config['dataset'] + '.npz'
@@ -63,11 +58,13 @@ def main():
     else:
         raise KeyError('Invalid dataset')
 
-    # Model API Logic 
-    from model import Model
-    model_instance = Model(config) # Instantiate the model class  with the .yaml config file 
-    model_instance.load_model(config) # Load the saved model with binary checkpoint
-    model_instance.eval_h36m(dataset) # Evaluate model on h36m dataset 
+    # Instantiate the model class with the .yaml config file
+    model = Model(config) 
+
+    
+    evaluation = Evaluation(model.get_model(), dataset) # replace dataset with dataset.get_data() 
+    # metrics = evaluation.get_metrics(model.config)  
+    evaluation.test_model_on_dataset() # should take in metrics ie. test_model_on_dataset(metrics)
 
 if __name__ == "__main__":
      main()

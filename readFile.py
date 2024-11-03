@@ -4,6 +4,8 @@ import torch
 import os
 import sys
 import yaml
+
+from dataset import H36M
 from model import Model
 from evaluation import Evaluation
 
@@ -49,22 +51,25 @@ def main():
 
 
     # Dataset loading 
-    print('Loading dataset...')
-    dataset_path = 'data/data_3d_' + config['dataset'] + '.npz'
-    if config['dataset'] == 'h36m':
-        from common.h36m_dataset import Human36mDataset
-        dataset = Human36mDataset(dataset_path)
-        dataset.preprocess(config)
-    else:
-        raise KeyError('Invalid dataset')
+
+
+    # print('Loading dataset...')
+    # dataset_path = 'data/data_3d_' + config['dataset'] + '.npz'
+    # if config['dataset'] == 'h36m':
+    #     from common.h36m_dataset import Human36mDataset
+    #     dataset = Human36mDataset(dataset_path)
+    #     dataset.preprocess(config)
+    # else:
+    #     raise KeyError('Invalid dataset')
 
     # Instantiate the model class with the .yaml config file
-    model = Model(config) 
+    model = Model(config)
+    dataset = H36M()
 
     
-    evaluation = Evaluation(model.get_model(), dataset) # replace dataset with dataset.get_data() 
+    evaluation = Evaluation(model, dataset)
     # metrics = evaluation.get_metrics(model.config)  
-    evaluation.test_model_on_dataset() # should take in metrics ie. test_model_on_dataset(metrics)
+    evaluation.evaluate() # should take in metrics ie. test_model_on_dataset(metrics)
 
 if __name__ == "__main__":
      main()

@@ -1,6 +1,6 @@
 # config.yaml
 
-model_location: '/pub/bjvela/KTPFormer/common'
+model_location: '/pub/agrawaa7/KTPFormer/common'
 dataset: 'h36m'
 keypoints: 'cpn_ft_h36m_dbb'
 subjects_train: 'S1,S5,S6,S7,S8'

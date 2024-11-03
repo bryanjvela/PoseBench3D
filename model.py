@@ -5,10 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 
-
 from typing import Dict
 from torch.nn import Module
-
 
 class Model:
     def __init__(self, config: Dict):

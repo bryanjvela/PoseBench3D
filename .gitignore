@@ -2,6 +2,9 @@
 checkpoint/
 # Ignore datasets and data located in data/
 data/
+
+ktpCommon/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

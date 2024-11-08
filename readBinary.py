@@ -20,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Script requires a YAML configuration file.")
     
     parser.add_argument(
-        '-cfg', 
+        #'--cfg', 
         '--config', 
         required=True, 
         type=str, 

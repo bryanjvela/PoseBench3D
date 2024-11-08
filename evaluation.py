@@ -1,11 +1,11 @@
 import torch
-from common.loss import *
+import numpy as np
+from common.loss import mpjpe, p_mpjpe 
 
 from model import Model  # Import Model from model.py
 from dataset import Dataset  # If Dataset is from dataset.py
 
 from common.generators import Evaluate_Generator
-import time 
 
 class Evaluation:
     def __init__(self, model: Model, dataset: Dataset):

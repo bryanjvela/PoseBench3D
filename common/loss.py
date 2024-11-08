@@ -128,27 +128,27 @@ def p_mpjpe(predicted, target):
     # Return MPJPE
     return np.mean(np.linalg.norm(predicted_aligned - target, axis=len(target.shape)-1))
 
-def mpjme(predicted_seq, target_seq, interval_set = [12]): # [N, 27, 17, 3]
-    """
-    Mean per-joint motion error (i.e. mean Euclidean distance), Abalations: multiple intervals, individual interval
-    """
-    assert predicted_seq.shape == target_seq.shape
-    frames_len = predicted_seq.size()[1]
-    loss_mpjme = 0
-    for interval in interval_set:
-        if interval > (frame_len -1) /2:
-            continue
-        for i in range( int((frames_len/2 + 1)/interval) ): # interval boundary
-            #forward
-            target_f = target_seq[:,frames_len/2+1 + interval,:,:] - target_seq[:,frames_len/2+1,:,:]
-            predicted_f = predicted_seq[:,frames_len/2+1 + interval,:,:] - predicted_seq[:,frames_len/2+1,:,:]
-            #backword
-            target_b = target_seq[:,frames_len/2+1,:,:] - target_seq[:,frames_len/2+1 - interval,:,:]
-            predicted_b = predicted_seq[:,frames_len/2+1,:,:] - predicted_seq[:,frames_len/2+1 - interval,:,:]
-            loss_mpjme = loss_mpjme + torch.mean(torch.norm(predicted_f - target_f, dim=len(target_f.shape)-1)) + \
-                                      torch.mean(torch.norm(predicted_b - target_b, dim=len(target_b.shape)-1))
+# def mpjme(predicted_seq, target_seq, interval_set = [12]): # [N, 27, 17, 3]
+#     """
+#     Mean per-joint motion error (i.e. mean Euclidean distance), Abalations: multiple intervals, individual interval
+#     """
+#     assert predicted_seq.shape == target_seq.shape
+#     frames_len = predicted_seq.size()[1]
+#     loss_mpjme = 0
+#     for interval in interval_set:
+#         if interval > (frame_len -1) /2:
+#             continue
+#         for i in range( int((frames_len/2 + 1)/interval) ): # interval boundary
+#             #forward
+#             target_f = target_seq[:,frames_len/2+1 + interval,:,:] - target_seq[:,frames_len/2+1,:,:]
+#             predicted_f = predicted_seq[:,frames_len/2+1 + interval,:,:] - predicted_seq[:,frames_len/2+1,:,:]
+#             #backword
+#             target_b = target_seq[:,frames_len/2+1,:,:] - target_seq[:,frames_len/2+1 - interval,:,:]
+#             predicted_b = predicted_seq[:,frames_len/2+1,:,:] - predicted_seq[:,frames_len/2+1 - interval,:,:]
+#             loss_mpjme = loss_mpjme + torch.mean(torch.norm(predicted_f - target_f, dim=len(target_f.shape)-1)) + \
+#                                       torch.mean(torch.norm(predicted_b - target_b, dim=len(target_b.shape)-1))
 
-    return loss_mpjme
+#     return loss_mpjme
 
 def mpjse(predicted_seq, target_seq, interval_set = [12]):
     """

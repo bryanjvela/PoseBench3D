@@ -332,19 +332,42 @@ class Human36mDataset(MocapDataset):
     def organize_actions(self):
         all_actions = {}
         all_actions_by_subject = {}
-
         for subject in self.subjects_test:
             if subject not in all_actions_by_subject:
                 all_actions_by_subject[subject] = {}
 
-            for action in self._data[subject].keys():
-                action_name = action.split(' ')[0]
-                if action_name not in all_actions:
-                    all_actions[action_name] = []
-                if action_name not in all_actions_by_subject[subject]:
-                    all_actions_by_subject[subject][action_name] = []
-                all_actions[action_name].append((subject, action))
-                all_actions_by_subject[subject][action_name].append((subject, action))
+            ordered_actions = self.define_actions()
+            for ordered_action in ordered_actions:
+                for action in self._data[subject].keys():
+                    action_name = action.split(' ')[0]
+                    if action_name == ordered_action:
+                        if action_name not in all_actions:
+                            all_actions[action_name] = []
+                        if action_name not in all_actions_by_subject:
+                            all_actions_by_subject[subject][action_name] = []
+                        all_actions[action_name].append((subject, action))
+                        all_actions_by_subject[subject][action_name].append((subject, action))
+                    else:
+                        continue
 
         return all_actions, all_actions_by_subject
+    
+    def define_actions(self):
+        all_actions = ["Directions",
+                       "Discussion",
+                       "Eating",
+                       "Greeting",
+                       "Phoning",
+                       "Photo",
+                       "Posing",
+                       "Purchases",
+                       "Sitting",
+                       "SittingDown",
+                       "Smoking",
+                       "Waiting",
+                       "WalkDog",
+                       "Walking",
+                       "WalkTogether"]
+
+        return all_actions
    

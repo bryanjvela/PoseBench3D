@@ -208,20 +208,21 @@ class Dataset:
         pass
 
 
-h36m_config = {
-    'dataset': 'h36m',
-    'keypoints': 'gt',
-    'render': False,
-    'subjects_train': 'S1,S5,S6,S7,S8',
-    'subjects_test': 'S9,S11',
-    'downsample': 1
-}
+# h36m_config = {
+#     'dataset': 'h36m',
+#     'keypoints': 'cpn_ft_h36m_dbb',
+#     'render': False,
+#     'subjects_train': 'S1,S5,S6,S7,S8',
+#     'subjects_test': 'S9,S11',
+#     'downsample': 1
+# }
 
 class H36M(Dataset):
-    def __init__(self): #, config):
-        dataset_path = 'data/data_3d_' + h36m_config['dataset'] + '.npz'
+    def __init__(self, config): #, config):
+        self.config = config
+        dataset_path = 'data/data_3d_' + self.config['dataset'] + '.npz'
         self._internal = Human36mDataset(dataset_path)
-        self._internal.preprocess(h36m_config)
+        self._internal.preprocess(self.config)
 
         # TODO: Reconsider whether essential to public interface when implementing new databases
         self.kps_left = self._internal.kps_left
@@ -229,15 +230,9 @@ class H36M(Dataset):
         self.joints_left = self._internal.joints_left
         self.joints_right = self._internal.joints_right
 
-    def data(self):# -> Tuple[List[torch.float32], List[torch.float32]]:
-        all_actions, _ = self._internal.organize_actions()
-        out3d = []
-        out2d = []
-
-        for action in all_actions:
-             t3d, t2d = self._internal.fetch_actions(all_actions[action], h36m_config)
-             out3d += t3d
-             out2d += t2d
-
-        return out3d, out2d
+    def organize_actions(self):
+        return self._internal.organize_actions()
+    
+    def data(self, actions, action_key):# -> Tuple[List[torch.float32], List[torch.float32]]:
+        return self._internal.fetch_actions(actions[action_key], self.config)
 

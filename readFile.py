@@ -49,27 +49,12 @@ def main():
     print_config_namespace_style(config)
 
 
-
-    # Dataset loading 
-
-
-    # print('Loading dataset...')
-    # dataset_path = 'data/data_3d_' + config['dataset'] + '.npz'
-    # if config['dataset'] == 'h36m':
-    #     from common.h36m_dataset import Human36mDataset
-    #     dataset = Human36mDataset(dataset_path)
-    #     dataset.preprocess(config)
-    # else:
-    #     raise KeyError('Invalid dataset')
-
     # Instantiate the model class with the .yaml config file
     model = Model(config)
-    dataset = H36M()
+    dataset = H36M(config)
 
-    
     evaluation = Evaluation(model, dataset)
-    # metrics = evaluation.get_metrics(model.config)  
-    evaluation.evaluate() # should take in metrics ie. test_model_on_dataset(metrics)
+    evaluation.evaluate()
 
 if __name__ == "__main__":
      main()

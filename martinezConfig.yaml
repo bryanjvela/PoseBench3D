@@ -1,5 +1,5 @@
 # General arguments
-model_location: '/pub/agrawaa7/GLA-GCN/common'
+model_location: '/pub/bjvela/GLA-GCN/common'
 dataset: 'h36m'
 keypoints: 'gt'
 subjects_train: 'S1,S5,S6,S7,S8'

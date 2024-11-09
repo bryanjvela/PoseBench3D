@@ -34,7 +34,7 @@ def main():
     
     args = parse_args()                  # Parse the command-line argument for the config file
     config = load_config(args.config)    # Load the config from the specified YAML file
-    print(type(config))
+    # print(type(config))
     #sys.path.append(config['model_location'])  # Add the directory, not the full path to the file
 
     print("Evaluating!")

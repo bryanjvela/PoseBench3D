@@ -202,7 +202,8 @@ h36m_cameras_extrinsic_params = {
 class Dataset:
     def data(self):# -> Tuple[List[torch.float32], List[torch.float32]]:
         pass
-
+    
+    # TODO get kps_left & kps_right & joints left and right 
 
 # h36m_config = {
 #     'dataset': 'h36m',

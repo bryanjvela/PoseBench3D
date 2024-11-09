@@ -34,10 +34,22 @@ class Evaluation:
 
                     # Positional model
                     predicted_3d_pos = model_pos(inputs_2d)
+
+                    # print(inputs_2d.shape)
+                    # exit()
+                    # # Unwrap DataParallel if present
+                    # if isinstance(model_pos, torch.nn.DataParallel):
+                    #     model_pos = model_pos.module
+
+                    # # try:
+                    # traced_cell = torch.jit.trace(model_pos, inputs_2d).cuda()
+                    # torch.jit.save(traced_cell, "jit_model.pt")
+                    # except RuntimeError as e:
+                    #     print("TorchScript export failed due to incompatible operations. Consider refactoring model.")
+                    #     exit()
                     predicted_3d_pos_flip = model_pos(inputs_2d_flip)
                     predicted_3d_pos_flip[:, :, :, 0] *= -1
-                    predicted_3d_pos_flip[:, :, self.dataset.joints_left + self.dataset.joints_right] = predicted_3d_pos_flip[:, :,
-                                                                            self.dataset.joints_right + self.dataset.joints_left]
+                    predicted_3d_pos_flip[:, :, self.dataset.joints_left + self.dataset.joints_right] = predicted_3d_pos_flip[:, :, self.dataset.joints_right + self.dataset.joints_left]
 
                     predicted_3d_pos = torch.mean(torch.cat((predicted_3d_pos, predicted_3d_pos_flip), dim=1), dim=1,
                                                 keepdim=True)

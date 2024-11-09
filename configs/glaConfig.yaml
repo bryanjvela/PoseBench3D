@@ -8,7 +8,7 @@ actions: '*'
 checkpoint: 'checkpoint'
 checkpoint_frequency: 10
 resume: ''
-evaluate: 'GLA-GCN_Model.pt'
+evaluate: 'GLA-GCN_jit_model.pt' 
 render: false
 by_subject: false
 export_training_curves: false

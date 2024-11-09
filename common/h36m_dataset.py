@@ -215,7 +215,7 @@ class Human36mDataset(MocapDataset):
                 cam['center'] = normalize_screen_coordinates(cam['center'], w=cam['res_w'], h=cam['res_h']).astype('float32')
                 cam['focal_length'] = cam['focal_length']/cam['res_w']*2
                 if 'translation' in cam:
-                    cam['translation'] = cam['translation']/1000 # mm to meters
+                    cam['translation'] = cam['translation']/1000 # mm to meters # Red flag for cdfs check up again 
                 
                 # Add intrinsic parameters vector
                 cam['intrinsic'] = np.concatenate((cam['focal_length'],

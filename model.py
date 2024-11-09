@@ -19,16 +19,21 @@ class Model:
         
         model_path = os.path.join(config['checkpoint'], config['evaluate'])
         print('Loading model from', model_path)
-        self.model = torch.load(model_path, map_location=lambda storage, loc: storage)
+        if 'jit' in model_path:
+            # Load with JIT if "jit" is in the model file name
+            self.model = torch.jit.load(model_path)
+        else:
+            # Load normally if "jit" is not in the model file name
+            self.model = torch.load(model_path, map_location=lambda storage, loc: storage)
         self.model.eval()
-        #print(type(self.model))
+        print(type(self.model))
         #exit()
         model_params = sum(p.numel() for p in self.model.parameters())
         print('INFO: Trainable parameter count:', model_params/1000000, 'Million')
 
         # make model parallel (not working for multiple gpus)
         if torch.cuda.is_available():
-            self.model = nn.DataParallel(self.model)
+            # self.model = nn.DataParallel(self.model)
             self.model = self.model.cuda()
     
     def get_model(self) -> Module:

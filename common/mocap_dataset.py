@@ -21,6 +21,16 @@ class MocapDataset:
             for action in self._data[subject].keys():
                 s = self._data[subject][action]
                 s['positions'] = s['positions'][:, kept_joints]
+
+    # TODO get camera metadata 
+
+    # TODO get world coordinates 
+
+    # TODO get camera coordinates 
+
+    # TODO get 2d 
+
+    # TODO get image ie. by index, image file names 
                 
         
     def __getitem__(self, key):

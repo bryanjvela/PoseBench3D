@@ -3,12 +3,40 @@ import copy
 from common.skeleton import Skeleton
 from common.mocap_dataset import MocapDataset
 from common.camera import normalize_screen_coordinates, world_to_camera # , image_coordinates
+from poseutils.props import calculate_limb_lengths, calculate_avg_limb_lengths
 
 h36m_skeleton = Skeleton(parents=[-1,  0,  1,  2,  3,  4,  0,  6,  7,  8,  9,  0, 11, 12, 13, 14, 12,
        16, 17, 18, 19, 20, 19, 22, 12, 24, 25, 26, 27, 28, 27, 30],
        joints_left=[6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21, 22, 23],
        joints_right=[1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31])
 
+EDGE_NAMES_16JNTS = ['HipRhip',
+              'RFemur', 'RTibia', 'HipLHip',
+              'LFemur', 'LTibia', 'LowerSpine',
+              'UpperSpine', 'NeckHead',
+              'LShoulder', 'LHumerus', 'LRadioUlnar',
+              'RShoulder', 'RHumerus', 'RRadioUlnar']
+
+# Joints in H3.6M -- data has 32 joints, but only 17 that move; these are the indices.
+H36M_NAMES = [''] * 32
+H36M_NAMES[0] = 'Hip'
+H36M_NAMES[1] = 'RHip'
+H36M_NAMES[2] = 'RKnee'
+H36M_NAMES[3] = 'RFoot'
+H36M_NAMES[6] = 'LHip'
+H36M_NAMES[7] = 'LKnee'
+H36M_NAMES[8] = 'LFoot'
+H36M_NAMES[12] = 'Spine'
+H36M_NAMES[13] = 'Thorax'
+H36M_NAMES[14] = 'Neck/Nose'
+H36M_NAMES[15] = 'Head'
+H36M_NAMES[17] = 'LShoulder'
+H36M_NAMES[18] = 'LElbow'
+H36M_NAMES[19] = 'LWrist'
+H36M_NAMES[25] = 'RShoulder'
+H36M_NAMES[26] = 'RElbow'
+H36M_NAMES[27] = 'RWrist'
+# GPA joint ordering needs convention
 h36m_cameras_intrinsic_params = [
     {
         'id': '54138969',
@@ -200,9 +228,9 @@ h36m_cameras_extrinsic_params = {
 }
 
 class Human36mDataset(MocapDataset):
-    def __init__(self, path, remove_static_joints=True):
+    def __init__(self, path, config, remove_static_joints=True):
         super().__init__(fps=50, skeleton=h36m_skeleton)
-        
+        # print(path)
         self._cameras = copy.deepcopy(h36m_cameras_extrinsic_params)
         for cameras in self._cameras.values():
             for i, cam in enumerate(cameras):
@@ -215,7 +243,7 @@ class Human36mDataset(MocapDataset):
                 cam['center'] = normalize_screen_coordinates(cam['center'], w=cam['res_w'], h=cam['res_h']).astype('float32')
                 cam['focal_length'] = cam['focal_length']/cam['res_w']*2
                 if 'translation' in cam:
-                    cam['translation'] = cam['translation']/1000 # mm to meters # Red flag for cdfs check up again 
+                    cam['translation'] = cam['translation']/1000 # mm to meters
                 
                 # Add intrinsic parameters vector
                 cam['intrinsic'] = np.concatenate((cam['focal_length'],
@@ -225,7 +253,65 @@ class Human36mDataset(MocapDataset):
         
         # Load serialized dataset
         data = np.load(path, allow_pickle=True)['positions_3d'].item()
+        # subject_point = 'S1'
+        # action_point  = 'Photo'      # Example action name
+        # frame_idx_point = 0          # Which frame to sample
+
+        # raw_3d = data[subject_point][action_point]          # shape (num_frames, 32, 3)
+        # sample_3d_32 = raw_3d[frame_idx_point]           # shape (32, 3)
+
+        # joints_to_remove = []
+        # for i, x in enumerate(H36M_NAMES):
+        #     if x == '' or x == 'Neck/Nose':  # Remove 'Nose' to make SH and H36M 2D poses have the same dimension
+        #         joints_to_remove.append(i)
+        # keep_indices = [i for i in range(32) if i not in joints_to_remove]
+        # sample_3d_16 = sample_3d_32[keep_indices]  # shape (16, 3)
+        # np.save("sample_3d_16.npy", sample_3d_16)
+        # exit(0)
+        # print(f"Single 3D Pose Datapoint: {sample_3d_16}")
+        # limb_lengths_3d = calculate_limb_lengths(sample_3d_16)
+        # limb_lengths_3d = np.array(limb_lengths_3d) * 1000
+        # print("3D Limb Lengths:", limb_lengths_3d)
+
+        #         # Print limb lengths with their corresponding joint names
+        # print("\n===== 3D Limb Lengths =====")
+        # for name, length in zip(EDGE_NAMES_16JNTS, limb_lengths_3d):
+        #     print(f"{name}: {length:.2f} mm")
+        # exit(0)
+
+        # # Prepare an empty list to store all 3D poses
+        # all_poses_3d = []
+
+        # # Iterate through all subjects and actions
+        # for subject, actions in data.items():
+        #     for action_name, positions in actions.items():  # positions shape: (num_frames, 32, 3)
+                
+        #         # Remove unwanted joints (convert from 32 to 16 joints)
+        #         joints_to_remove = []
+        #         for i, x in enumerate(H36M_NAMES):
+        #             if x == '' or x == 'Neck/Nose':  # Remove 'Nose' to match 16-joint format
+        #                 joints_to_remove.append(i)
+
+        #         keep_indices = [i for i in range(32) if i not in joints_to_remove]
+        #         positions_16 = positions[:, keep_indices, :]  # shape: (num_frames, 16, 3)
         
+        #         # Store processed 3D poses
+        #         all_poses_3d.append(positions_16)
+
+        # # Stack all frames across all subjects and actions
+        # all_poses_3d = np.vstack(all_poses_3d)  # Shape: (Total_frames, 16, 3)
+
+        # # Compute average limb lengths across entire dataset
+        # avg_limb_lengths_3d, _, _ = calculate_avg_limb_lengths(all_poses_3d)
+
+        # # Convert to millimeters
+        # limb_lengths_3d = np.array(avg_limb_lengths_3d) * 1000
+
+        # # Print results
+        # print("\n===== Average 3D Limb Lengths Across Dataset =====")
+        # for name, length in zip(EDGE_NAMES_16JNTS, limb_lengths_3d):
+        #     print(f"{name}: {length:.2f} mm")
+
         self._data = {}
         for subject, actions in data.items():
             self._data[subject] = {}
@@ -234,20 +320,37 @@ class Human36mDataset(MocapDataset):
                     'positions': positions,
                     'cameras': self._cameras[subject],
                 }
-                
-        if remove_static_joints:
+
+        
+        input_shape = config['input_shape']
+        if remove_static_joints and input_shape['num_joints'] == 17:
             self.remove_joints([4, 5, 9, 10, 11, 16, 20, 21, 22, 23, 24, 28, 29, 30, 31])
 
             self._skeleton._parents[11] = 8
             self._skeleton._parents[14] = 8
-            
+            print("Skeleton kept 17 joints")
+        elif remove_static_joints and input_shape['num_joints'] == 16:
+            print("Skeleton kept 16 joints")
+            # Bring the skeleton to 16 joints instead of the original 32
+            joints = []
+            for i, x in enumerate(H36M_NAMES):
+                if x == '' or x == 'Neck/Nose':  # Remove 'Nose' to make SH and H36M 2D poses have the same dimension
+                    joints.append(i)
+            self.remove_joints(joints)
+
+            # Rewire shoulders to the correct parents
+            self._skeleton._parents[10] = 8
+            self._skeleton._parents[13] = 8
+
+        
     def supports_semi_supervised(self):
         return True
     
-    def preprocess(self, config):
-        print("Start pre-processing data from the H36M Class API")
+    
+    def preprocess(self, config, output_filename_2d):
+        # print("Start pre-processing data from the H36M Class API")
         # Prepare data for use
-        print('Preparing data...')
+        # print('Preparing data...')
         for subject in self.subjects():
             for action in self[subject].keys():
                 anim = self[subject][action]
@@ -256,14 +359,23 @@ class Human36mDataset(MocapDataset):
                     positions_3d = []
                     for cam in anim['cameras']:
                         pos_3d = world_to_camera(anim['positions'], R=cam['orientation'], t=cam['translation'])
-                        pos_3d[:, 1:] -= pos_3d[:, :1]  # Remove global offset, but keep trajectory in the first position
+                        # print(pos_3d)
+                        # Remove global offset with or without keeping the trajectory
+                        if config['remove_global_offset']:
+                            offset_range = slice(1, None) if config['keep_traj_first_pos'] else slice(None)
+                            pos_3d[:, offset_range] -= pos_3d[:, :1]  # Adjust only the necessary range
+                            # print(pos_3d)
+                            # exit(0)
                         positions_3d.append(pos_3d)
                     anim['positions_3d'] = positions_3d
 
         # Load 2D keypoints
-        print('Loading 2D detections...')
-        keypoints = np.load(f"data/data_2d_{config['dataset']}_{config['keypoints']}.npz", allow_pickle=True)
+        # print('Loading 2D detections...')
+        keypoints = np.load(output_filename_2d, allow_pickle=True)
+
+
         keypoints_metadata = keypoints['metadata'].item()
+        print(keypoints_metadata)
         keypoints_symmetry = keypoints_metadata['keypoints_symmetry']
         
         # Store these variables as attributes of the object
@@ -279,7 +391,7 @@ class Human36mDataset(MocapDataset):
                 assert action in self.keypoints[subject], f'Action {action} of subject {subject} is missing from the 2D detections dataset'
                 if 'positions_3d' not in self[subject][action]:
                     continue
-
+                
                 for cam_idx in range(len(self.keypoints[subject][action])):
                     mocap_length = self[subject][action]['positions_3d'][cam_idx].shape[0]
                     assert self.keypoints[subject][action][cam_idx].shape[0] >= mocap_length
@@ -298,36 +410,57 @@ class Human36mDataset(MocapDataset):
                     kps[..., :2] = normalize_screen_coordinates(kps[..., :2], w=cam['res_w'], h=cam['res_h'])
                     self.keypoints[subject][action][cam_idx] = kps
 
-        # Determine subjects for testing or rendering
-        if not config['render']:
-            self.subjects_test = config['subjects_test'].split(',')
+        # Modified Code
+        if not config.get('render', False):  # Defaults to False if 'render' is missing
+            self.subjects_test = config.get('subjects_test', '').split(',')  # Defaults to empty string
+            print(self.subjects_test)
         else:
-            self.subjects_test = [config['viz_subject']]
-        print("Finished pre-processing data from the H36M Class API")
+            self.subjects_test = [config.get('viz_subject', '')]  # Defaults to empty string
+            print(self.subjects_test)
+
 
     def fetch_actions(self, actions, config):
         out_poses_3d = []
         out_poses_2d = []
 
         for subject, action in actions:
-            poses_2d = self.keypoints[subject][action]
-            for i in range(len(poses_2d)): # Iterate across cameras
-                out_poses_2d.append(poses_2d[i])
+            poses_2d = self.keypoints[subject][action]  # List of arrays (one per camera)
+            poses_3d = self._data[subject][action]['positions_3d']  # List of arrays (one per camera)
 
-            poses_3d = self._data[subject][action]['positions_3d']
             assert len(poses_3d) == len(poses_2d), 'Camera count mismatch'
-            for i in range(len(poses_3d)): # Iterate across cameras
+
+            # Accumulate all camera views in two lists
+            for i in range(len(poses_2d)):
+                out_poses_2d.append(poses_2d[i])
                 out_poses_3d.append(poses_3d[i])
 
+        # Downsample each camera array if needed
         stride = config['downsample']
         if stride > 1:
-            # Downsample as requested
             for i in range(len(out_poses_2d)):
                 out_poses_2d[i] = out_poses_2d[i][::stride]
-                if out_poses_3d is not None:
-                    out_poses_3d[i] = out_poses_3d[i][::stride]
+                out_poses_3d[i] = out_poses_3d[i][::stride]
 
-        return out_poses_3d, out_poses_2d
+        # Concatenate all cameras into one array
+        poses_2d_all = np.concatenate(out_poses_2d, axis=0)  # (N, num_joints, 2)
+        poses_3d_all = np.concatenate(out_poses_3d, axis=0)  # (N, num_joints, 3)
+
+        flatten_2d = config.get('flatten_2d', False)
+        flatten_3d = config.get('flatten_3d', False)
+        
+        if flatten_2d:
+            # e.g. 16 joints * 2 dims = 32
+            print(poses_2d_all.shape)
+            poses_2d_all = poses_2d_all.reshape(poses_2d_all.shape[0], -1)
+            print(poses_2d_all.shape)
+        if flatten_3d:
+            print(poses_3d_all.shape)
+            # e.g. 16 joints * 3 dims = 48
+            poses_3d_all = poses_3d_all.reshape(poses_3d_all.shape[0], -1)
+            print(poses_3d_all.shape)
+        
+        return poses_3d_all, poses_2d_all
+
 
     def organize_actions(self):
         all_actions = {}
@@ -370,4 +503,29 @@ class Human36mDataset(MocapDataset):
                        "WalkTogether"]
 
         return all_actions
+    
+    def define_actions_sem(self, action=None):
+        all_actions = ["Directions",
+                       "Discussion",
+                       "Eating",
+                       "Greeting",
+                       "Phoning",
+                       "Photo",
+                       "Posing",
+                       "Purchases",
+                       "Sitting",
+                       "SittingDown",
+                       "Smoking",
+                       "Waiting",
+                       "WalkDog",
+                       "Walking",
+                       "WalkTogether"]
+
+        if action is None:
+            return all_actions
+
+        if action not in all_actions:
+            raise (ValueError, "Undefined action: {}".format(action))
+
+        return [action]
    

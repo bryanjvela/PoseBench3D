@@ -1,8 +1,0 @@
-model_location: '/pub/bjvela/GLA-GCN/gla_common'
-dataset: 'h36m'
-keypoints: 'cpn_ft_h36m_dbb'
-subjects_train: 'S1,S5,S6,S7,S8'
-subjects_test: 'S9,S11'
-actions: '*'
-checkpoint: 'checkpoint'
-evaluate: 'martinez_model.pt'

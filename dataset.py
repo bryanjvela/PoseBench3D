@@ -1,203 +1,30 @@
-#from typing import List, Tuple
+from typing import List, Tuple
 
 
 from common.skeleton import Skeleton
 from common.h36m_dataset import Human36mDataset
 
-h36m_skeleton = Skeleton(parents=[-1,  0,  1,  2,  3,  4,  0,  6,  7,  8,  9,  0, 11, 12, 13, 14, 12,
-       16, 17, 18, 19, 20, 19, 22, 12, 24, 25, 26, 27, 28, 27, 30],
-       joints_left=[6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21, 22, 23],
-       joints_right=[1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31])
+import scipy.io
+from smpl_relations import get_intrinsic, get_extrinsic
 
-h36m_cameras_intrinsic_params = [
-    {
-        'id': '54138969',
-        'center': [512.54150390625, 515.4514770507812],
-        'focal_length': [1145.0494384765625, 1143.7811279296875],
-        'radial_distortion': [-0.20709891617298126, 0.24777518212795258, -0.0030751503072679043],
-        'tangential_distortion': [-0.0009756988729350269, -0.00142447161488235],
-        'res_w': 1000,
-        'res_h': 1002,
-        'azimuth': 70, # Only used for visualization
-    },
-    {
-        'id': '55011271',
-        'center': [508.8486328125, 508.0649108886719],
-        'focal_length': [1149.6756591796875, 1147.5916748046875],
-        'radial_distortion': [-0.1942136287689209, 0.2404085397720337, 0.006819975562393665],
-        'tangential_distortion': [-0.0016190266469493508, -0.0027408944442868233],
-        'res_w': 1000,
-        'res_h': 1000,
-        'azimuth': -70, # Only used for visualization
-    },
-    {
-        'id': '58860488',
-        'center': [519.8158569335938, 501.40264892578125],
-        'focal_length': [1149.1407470703125, 1148.7989501953125],
-        'radial_distortion': [-0.2083381861448288, 0.25548800826072693, -0.0024604974314570427],
-        'tangential_distortion': [0.0014843869721516967, -0.0007599993259645998],
-        'res_w': 1000,
-        'res_h': 1000,
-        'azimuth': 110, # Only used for visualization
-    },
-    {
-        'id': '60457274',
-        'center': [514.9682006835938, 501.88201904296875],
-        'focal_length': [1145.5113525390625, 1144.77392578125],
-        'radial_distortion': [-0.198384091258049, 0.21832367777824402, -0.008947807364165783],
-        'tangential_distortion': [-0.0005872055771760643, -0.0018133620033040643],
-        'res_w': 1000,
-        'res_h': 1002,
-        'azimuth': -110, # Only used for visualization
-    },
-]
+import numpy as np
 
-h36m_cameras_extrinsic_params = {
-    'S1': [
-        {
-            'orientation': [0.1407056450843811, -0.1500701755285263, -0.755240797996521, 0.6223280429840088],
-            'translation': [1841.1070556640625, 4955.28466796875, 1563.4454345703125],
-        },
-        {
-            'orientation': [0.6157187819480896, -0.764836311340332, -0.14833825826644897, 0.11794740706682205],
-            'translation': [1761.278564453125, -5078.0068359375, 1606.2650146484375],
-        },
-        {
-            'orientation': [0.14651472866535187, -0.14647851884365082, 0.7653023600578308, -0.6094175577163696],
-            'translation': [-1846.7777099609375, 5215.04638671875, 1491.972412109375],
-        },
-        {
-            'orientation': [0.5834008455276489, -0.7853162288665771, 0.14548823237419128, -0.14749594032764435],
-            'translation': [-1794.7896728515625, -3722.698974609375, 1574.8927001953125],
-        },
-    ],
-    'S2': [
-        {},
-        {},
-        {},
-        {},
-    ],
-    'S3': [
-        {},
-        {},
-        {},
-        {},
-    ],
-    'S4': [
-        {},
-        {},
-        {},
-        {},
-    ],
-    'S5': [
-        {
-            'orientation': [0.1467377245426178, -0.162370964884758, -0.7551892995834351, 0.6178938746452332],
-            'translation': [2097.3916015625, 4880.94482421875, 1605.732421875],
-        },
-        {
-            'orientation': [0.6159758567810059, -0.7626792192459106, -0.15728192031383514, 0.1189815029501915],
-            'translation': [2031.7008056640625, -5167.93310546875, 1612.923095703125],
-        },
-        {
-            'orientation': [0.14291371405124664, -0.12907841801643372, 0.7678384780883789, -0.6110143065452576],
-            'translation': [-1620.5948486328125, 5171.65869140625, 1496.43701171875],
-        },
-        {
-            'orientation': [0.5920479893684387, -0.7814217805862427, 0.1274748593568802, -0.15036417543888092],
-            'translation': [-1637.1737060546875, -3867.3173828125, 1547.033203125],
-        },
-    ],
-    'S6': [
-        {
-            'orientation': [0.1337897777557373, -0.15692396461963654, -0.7571090459823608, 0.6198879480361938],
-            'translation': [1935.4517822265625, 4950.24560546875, 1618.0838623046875],
-        },
-        {
-            'orientation': [0.6147197484970093, -0.7628812789916992, -0.16174767911434174, 0.11819244921207428],
-            'translation': [1969.803955078125, -5128.73876953125, 1632.77880859375],
-        },
-        {
-            'orientation': [0.1529948115348816, -0.13529130816459656, 0.7646096348762512, -0.6112781167030334],
-            'translation': [-1769.596435546875, 5185.361328125, 1476.993408203125],
-        },
-        {
-            'orientation': [0.5916101336479187, -0.7804774045944214, 0.12832270562648773, -0.1561593860387802],
-            'translation': [-1721.668701171875, -3884.13134765625, 1540.4879150390625],
-        },
-    ],
-    'S7': [
-        {
-            'orientation': [0.1435241848230362, -0.1631336808204651, -0.7548328638076782, 0.6188824772834778],
-            'translation': [1974.512939453125, 4926.3544921875, 1597.8326416015625],
-        },
-        {
-            'orientation': [0.6141672730445862, -0.7638262510299683, -0.1596645563840866, 0.1177929937839508],
-            'translation': [1937.0584716796875, -5119.7900390625, 1631.5665283203125],
-        },
-        {
-            'orientation': [0.14550060033798218, -0.12874816358089447, 0.7660516500473022, -0.6127139329910278],
-            'translation': [-1741.8111572265625, 5208.24951171875, 1464.8245849609375],
-        },
-        {
-            'orientation': [0.5912848114967346, -0.7821764349937439, 0.12445473670959473, -0.15196487307548523],
-            'translation': [-1734.7105712890625, -3832.42138671875, 1548.5830078125],
-        },
-    ],
-    'S8': [
-        {
-            'orientation': [0.14110587537288666, -0.15589867532253265, -0.7561917304992676, 0.619644045829773],
-            'translation': [2150.65185546875, 4896.1611328125, 1611.9046630859375],
-        },
-        {
-            'orientation': [0.6169601678848267, -0.7647668123245239, -0.14846350252628326, 0.11158157885074615],
-            'translation': [2219.965576171875, -5148.453125, 1613.0440673828125],
-        },
-        {
-            'orientation': [0.1471444070339203, -0.13377119600772858, 0.7670128345489502, -0.6100369691848755],
-            'translation': [-1571.2215576171875, 5137.0185546875, 1498.1761474609375],
-        },
-        {
-            'orientation': [0.5927824378013611, -0.7825870513916016, 0.12147816270589828, -0.14631995558738708],
-            'translation': [-1476.913330078125, -3896.7412109375, 1547.97216796875],
-        },
-    ],
-    'S9': [
-        {
-            'orientation': [0.15540587902069092, -0.15548215806484222, -0.7532095313072205, 0.6199594736099243],
-            'translation': [2044.45849609375, 4935.1171875, 1481.2275390625],
-        },
-        {
-            'orientation': [0.618784487247467, -0.7634735107421875, -0.14132238924503326, 0.11933968216180801],
-            'translation': [1990.959716796875, -5123.810546875, 1568.8048095703125],
-        },
-        {
-            'orientation': [0.13357827067375183, -0.1367100477218628, 0.7689454555511475, -0.6100738644599915],
-            'translation': [-1670.9921875, 5211.98583984375, 1528.387939453125],
-        },
-        {
-            'orientation': [0.5879399180412292, -0.7823407053947449, 0.1427614390850067, -0.14794869720935822],
-            'translation': [-1696.04345703125, -3827.099853515625, 1591.4127197265625],
-        },
-    ],
-    'S11': [
-        {
-            'orientation': [0.15232472121715546, -0.15442320704460144, -0.7547563314437866, 0.6191070079803467],
-            'translation': [2098.440185546875, 4926.5546875, 1500.278564453125],
-        },
-        {
-            'orientation': [0.6189449429512024, -0.7600917220115662, -0.15300633013248444, 0.1255258321762085],
-            'translation': [2083.182373046875, -4912.1728515625, 1561.07861328125],
-        },
-        {
-            'orientation': [0.14943228662014008, -0.15650227665901184, 0.7681233882904053, -0.6026304364204407],
-            'translation': [-1609.8153076171875, 5177.3359375, 1537.896728515625],
-        },
-        {
-            'orientation': [0.5894251465797424, -0.7818877100944519, 0.13991211354732513, -0.14715361595153809],
-            'translation': [-1590.738037109375, -3854.1689453125, 1578.017578125],
-        },
-    ],
-}
+
+import argparse
+import os
+import zipfile
+import numpy as np
+import h5py
+from glob import glob
+from shutil import rmtree
+import cdflib
+import sys
+sys.path.append('../')
+from common.h36m_dataset import Human36mDataset
+from common.camera import world_to_camera, project_to_2d, image_coordinates
+from common.utils import wrap
+
+subjects = ['S1', 'S5', 'S6', 'S7', 'S8', 'S9', 'S11']
 
 class Dataset:
     def data(self):# -> Tuple[List[torch.float32], List[torch.float32]]:
@@ -205,31 +32,385 @@ class Dataset:
     
     # TODO get kps_left & kps_right & joints left and right 
 
-# h36m_config = {
-#     'dataset': 'h36m',
-#     'keypoints': 'cpn_ft_h36m_dbb',
-#     'render': False,
-#     'subjects_train': 'S1,S5,S6,S7,S8',
-#     'subjects_test': 'S9,S11',
-#     'downsample': 1
-# }
 
 class H36M(Dataset):
-    def __init__(self, config): #, config):
+    def __init__(self, config):
         self.config = config
-        dataset_path = 'data/data_3d_' + self.config['dataset'] + '.npz'
-        self._internal = Human36mDataset(dataset_path)
-        self._internal.preprocess(self.config)
+        
+        data_3d_dir = os.path.abspath(self.config.get('data_dir', '.'))
+        os.makedirs(data_3d_dir, exist_ok=True)
+        output_filename_3d = os.path.join(data_3d_dir, 'data_3d_h36m.npz')
 
-        # TODO: Reconsider whether essential to public interface when implementing new databases
-        self.kps_left = self._internal.kps_left
-        self.kps_right = self._internal.kps_right
-        self.joints_left = self._internal.joints_left
-        self.joints_right = self._internal.joints_right
+        data_2d_dir = os.path.abspath(self.config.get('data_dir', '.'))
+        os.makedirs(data_2d_dir, exist_ok=True)
+        output_filename_2d = os.path.join(data_2d_dir, 'data_2d_h36m_gt.npz')
+
+        # ------------------------------------------------------------------
+        # Prepare the shape metadata for this run (from config).
+        # For the 3D dataset, we typically compare against `output_shape`.
+        # For the 2D dataset, we typically compare against `input_shape`.
+        # ------------------------------------------------------------------
+        self.expected_3d_meta = {
+            'num_frames':   config['output_shape'].get('num_frames'),
+            'num_joints':   config['output_shape'].get('num_joints'),
+            'coordinates':  config['output_shape'].get('coordinates'),
+        }
+        self.expected_2d_meta = {
+            'num_frames':   config['input_shape'].get('num_frames'),
+            'num_joints':   config['input_shape'].get('num_joints'),
+            'coordinates':  config['input_shape'].get('coordinates'),
+        }
+
+        # ------------------------------------------------------
+        # 1) Check if 3D file exists AND if shape metadata matches
+        # ------------------------------------------------------
+        create_3d_data = True
+        if os.path.isfile(output_filename_3d):
+            print(f"3D dataset file {output_filename_3d} already exists.")
+            with np.load(output_filename_3d, allow_pickle=True) as data:
+                if 'metadata_3d' in data:
+                    stored_3d_meta = data['metadata_3d'].item()
+                    if self._shapes_match(stored_3d_meta, self.expected_3d_meta):
+                        print("3D metadata matches config. Using existing file.")
+                        output = data['positions_3d'].item()  # Convert np.object array -> dict
+                        create_3d_data = False
+                    else:
+                        print("3D metadata does NOT match config. Overwriting...")
+                else:
+                    print("No 3D metadata found. Overwriting...")
+        else:
+            print(f"3D dataset file {output_filename_3d} does not exist. Creating...")
+
+        # ------------------------------------------------------
+        # If needed, create and save the 3D data
+        # ------------------------------------------------------
+        if create_3d_data:
+            print('Creating 3D dataset from Human3.6M (CDF) files...')
+            output = {}
+            subjects = ['S1','S5','S6','S7','S8','S9','S11']
+            for subject in subjects:
+                output[subject] = {}
+                file_list = glob(os.path.join(self.config['path_to_dataset'], subject, 'MyPoseFeatures', 'D3_Positions', '*.cdf'))
+                assert len(file_list) == 30, (f"Expected 30 files for subject {subject}, got {len(file_list)}")
+                for f in file_list:
+                    action = os.path.splitext(os.path.basename(f))[0]
+                    if subject == 'S11' and action == 'Directions':
+                        continue  # Discard corrupted video
+
+                    # Use consistent naming convention
+                    canonical_name = (action.replace('TakingPhoto', 'Photo').replace('WalkingDog', 'WalkDog'))
+                    hf = cdflib.CDF(f)
+                    positions = hf['Pose'].reshape(-1, 32, 3)
+                    positions /= 1000.0  # Convert mm -> meters
+                    output[subject][canonical_name] = positions.astype('float32')
+
+            print('Saving 3D poses...')
+            np.savez_compressed(
+                output_filename_3d, 
+                positions_3d=output,
+                metadata_3d=self.expected_3d_meta  # Store the shape metadata in the file
+            )
+            print(f'3D Dataset saved to {output_filename_3d}')
+
+        # ------------------------------------------------------
+        # 2) Build the internal dataset for 3D
+        #    (Human36mDataset will read from the saved npz.)
+        # ------------------------------------------------------
+        print("Initializing internal Human36mDataset for 3D data...")
+        self._dataset = Human36mDataset(output_filename_3d, self.config)
+
+        # ------------------------------------------------------
+        # 3) Check if 2D file exists AND if shape metadata matches
+        # ------------------------------------------------------
+        create_2d_data = True
+        if os.path.isfile(output_filename_2d):
+            print(f"2D dataset file {output_filename_2d} already exists.")
+            with np.load(output_filename_2d, allow_pickle=True) as data:
+                if 'metadata_2d' in data:
+                    stored_2d_meta = data['metadata_2d'].item()
+                    if self._shapes_match(stored_2d_meta, self.expected_2d_meta):
+                        print("2D metadata matches config. Using existing file.")
+                        output_2d_poses = data['positions_2d'].item()
+                        metadata = data['metadata'].item() if isinstance(data['metadata'], np.ndarray) else data['metadata']
+                        create_2d_data = False
+                    else:
+                        print("2D metadata does NOT match config. Overwriting...")
+                else:
+                    print("No 2D metadata found. Overwriting...")
+        else:
+            print(f"2D dataset file {output_filename_2d} does not exist. Creating...")
+
+        # ------------------------------------------------------
+        # If needed, create and save the 2D data
+        # ------------------------------------------------------
+        if create_2d_data:
+            print('\nComputing ground-truth 2D poses...')
+            output_2d_poses = {}
+            for subject in self._dataset.subjects():
+                output_2d_poses[subject] = {}
+                for action in self._dataset[subject].keys():
+                    anim = self._dataset[subject][action]
+                    positions_2d = []
+                    for cam in anim['cameras']:
+                        pos_3d = world_to_camera(anim['positions'], R=cam['orientation'], t=cam['translation'])
+                        pos_2d = wrap(project_to_2d, pos_3d, cam['intrinsic'], unsqueeze=True)
+                        pos_2d_pixel_space = image_coordinates(pos_2d, w=cam['res_w'], h=cam['res_h'])
+                        positions_2d.append(pos_2d_pixel_space.astype('float32'))
+                    output_2d_poses[subject][action] = positions_2d
+
+            print('Saving 2D poses...')
+            # You may already have metadata in `metadata`, so let's add
+            # your shape fields as a separate 'metadata_2d' dict.
+            metadata = {'num_joints': self._dataset.skeleton().num_joints(),
+                'keypoints_symmetry': [
+                    self._dataset.skeleton().joints_left(),
+                    self._dataset.skeleton().joints_right()
+                ]
+            }
+            np.savez_compressed(
+                output_filename_2d, 
+                positions_2d=output_2d_poses,
+                metadata=metadata,         # your existing metadata
+                metadata_2d=self.expected_2d_meta  # store shape-based metadata
+            )
+            print(f'2D Dataset saved to {output_filename_2d}')
+
+        # ------------------------------------------------------
+        # 4) Preprocess the dataset with the newly created/loaded 2D data
+        # ------------------------------------------------------
+        print("Preprocessing dataset with 2D data...")
+        self._dataset.preprocess(self.config, output_filename_2d)
+
+        self.kps_left = self._dataset.kps_left
+        self.kps_right = self._dataset.kps_right
+        self.joints_left = self._dataset.joints_left
+        self.joints_right = self._dataset.joints_right
+        self.keypoints = self._dataset.keypoints
+        print("H36M initialization complete.")
+
 
     def organize_actions(self):
-        return self._internal.organize_actions()
+        return self._dataset.organize_actions()
     
-    def data(self, actions, action_key):# -> Tuple[List[torch.float32], List[torch.float32]]:
-        return self._internal.fetch_actions(actions[action_key], self.config)
+    def data(self, actions):
+        # Flatten the dictionary {action_name: [(subject, action), ...]} 
+        # into a single list of (subject, action) pairs
+        flat_actions = []
+        for _, sa_list in actions.items():
+            flat_actions.extend(sa_list)
+        
+        return self._dataset.fetch_actions(flat_actions, self.config)
 
+    def _shapes_match(self, stored_meta, expected_meta):
+        """Compare num_frames, num_joints, and coordinates in metadata."""
+        return (
+            stored_meta.get('num_frames', None) == expected_meta.get('num_frames', None)
+            and stored_meta.get('num_joints', None) == expected_meta.get('num_joints', None)
+            and stored_meta.get('coordinates', None) == expected_meta.get('coordinates', None)
+        )
+
+class GPA(Dataset):
+    def __init__(self, config):
+        self.config = config
+
+        print("Loading GPA dataset...")
+        data = np.load("/pub/bjvela/PoseLab3D/conformed_GPA_meters.npz", allow_pickle=True)
+
+        # Extract the stored dictionary
+        data_obj = data['data'].item()
+
+        # Load test data only
+        test_data = data_obj.get('test', {})
+
+        # Extract 2D, 2D normalized, 3D, and 3D normalized test data
+        self.test_2d = test_data.get('2d', None)
+        self.test_2d_normalized = test_data.get('normalized_2d', None)
+        self.test_3d = test_data.get('3d', None)
+        self.test_3d_normalized = test_data.get('normalized_3d', None)
+
+        # Print shape information for debugging
+        # print(f"Test 2D shape: {self.test_2d.shape if self.test_2d is not None else 'None'}")
+        # print(f"Test 2D Normalized shape: {self.test_2d_normalized.shape if self.test_2d_normalized is not None else 'None'}")
+        # print(f"Test 3D shape: {self.test_3d.shape if self.test_3d is not None else 'None'}")
+        # print(f"Test 3D Normalized shape: {self.test_3d_normalized.shape if self.test_3d_normalized is not None else 'None'}")
+        print("Sucessfully loaded GPA dataset.")
+
+    def data(self, actions):
+        return self.test_3d, self.test_2d
+
+
+class Surreal(Dataset):
+    def __init__(self, config):
+        self.config = config
+        self.npz_file = "surreal_preprocessed.npz"
+
+        if os.path.exists(self.npz_file):
+            print(f"Loading preprocessed data from {self.npz_file}...")
+            data = np.load(self.npz_file)
+            self._3d_cam = data['coords_3d']
+            self._2d = data['coords_2d']
+            self._3d_cam_norm = data['coords_3d_norm']
+            self._2d_norm = data['coords_2d_norm']
+        else:
+            print("Preprocessing SURREAL data from .mat files...")
+            base_dir = '../SURREAL/data/cmu/test/run0'
+            # Gather all *_info.mat files
+            mat_files = []
+            for root, dirs, files in os.walk(base_dir):
+                for f in files:
+                    if f.endswith('_info.mat'):
+                        mat_files.append(os.path.join(root, f))
+
+            # Use lists, then one-time concat
+            list_3d = []
+            list_2d = []
+
+            for mat_path in mat_files:
+                data = scipy.io.loadmat(mat_path)
+                joints3D = data['joints3D'].transpose(2, 1, 0)  # (N,24,3)
+                joints2D = data['joints2D'].transpose(2, 1, 0)  # (N,24,2)
+                list_3d.append(joints3D)
+                list_2d.append(joints2D)
+
+            self._3d_world = np.concatenate(list_3d, axis=0)
+            self._2d       = np.concatenate(list_2d, axis=0)
+            
+            # Subselect joints
+            to_select = [0, 1, 4, 7, 2, 5, 8, 6, 12, 15, 17, 19, 23, 16, 18, 22]
+            self._3d_world = self._3d_world[:, to_select, :]
+            self._2d       = self._2d[:,       to_select, :]
+
+            # Convert from world to camera
+            # (Be sure that `data` still points to the last read,
+            #  or re-derive extrinsics in a consistent way.)
+            _, R, T = get_extrinsic(data['camLoc'])
+            self._3d_cam = np.copy(self._3d_world)
+            for i in range(self._3d_cam.shape[0]):
+                self._3d_cam[i] = np.dot(R, self._3d_cam[i].T).T + T.T
+
+            # Optional: zero-center or “normalize” in a single pass
+            self._3d_cam_norm = self._3d_cam - self._3d_cam[:, :1, :]
+            self._2d_norm     = self._2d     - self._2d[:,     :1, :]
+            np.savez_compressed("surreal_preprocessed.npz", 
+                        coords_3d=self._3d_cam, 
+                        coords_2d=self._2d,
+                        coords_3d_norm=self._3d_cam_norm,
+                        coords_2d_norm=self._2d_norm)
+            # TODO
+            # normalize_zscore(self.normalized_3d_train, self.mean_3d, self.std_3d, skip_root=True)
+            # normalize_zscore(self.normalized_3d_train, self.mean_3d, self.std_3d, skip_root=True)
+
+    def data(self):
+        return self._3d_cam, self._2d
+        # return self._3d_cam_norm, self._2d
+
+
+class ThreeDPW(Dataset):
+    def __init__(self, config):
+        self.config = config
+
+        print("Loading 3DPW dataset...")
+        data = np.load("/pub/bjvela/PoseLab3D/test1_3dpw.npz", allow_pickle=True)
+
+        # Extract the stored dictionary
+        data_obj = data['data'].item()
+
+        # Load test data only
+        test_data = data_obj.get('test', {})
+
+        # Extract 2D, 2D normalized, 3D, and 3D normalized test data
+        self.test_2d = test_data.get('2d', None)
+        # self.test_2d_normalized = test_data.get('normalized_2d', None)
+        self.test_3d = test_data.get('3d', None)
+        # self.test_3d_normalized = test_data.get('normalized_3d', None)
+
+        # Print shape information for debugging
+        # print(f"Test 2D shape: {self.test_2d.shape if self.test_2d is not None else 'None'}")
+        # print(f"Test 2D Normalized shape: {self.test_2d_normalized.shape if self.test_2d_normalized is not None else 'None'}")
+        # print(f"Test 3D shape: {self.test_3d.shape if self.test_3d is not None else 'None'}")
+        # print(f"Test 3D Normalized shape: {self.test_3d_normalized.shape if self.test_3d_normalized is not None else 'None'}")
+        print("Sucessfully loaded GPA dataset.")
+
+    def data(self):
+        return self.test_3d, self.test_2d
+    
+
+
+
+# class H36M(Dataset):
+#     def __init__(self, config):
+#         self.config = config
+#         print('Converting original Human3.6M dataset from', self.config['path_to_dataset'], '(CDF files)')
+#         output = {}
+
+#         # Resolve paths for the 3D data directory
+#         data_3d_dir = os.path.abspath(self.config.get('data_dir', '.'))
+#         os.makedirs(data_3d_dir, exist_ok=True)
+        
+#         # Define the dynamic output file path for 3D poses
+#         output_filename_3d = os.path.join(data_3d_dir, 'data_3d_h36m.npz')
+#         # World Coordinates 
+#         for subject in subjects:
+#             output[subject] = {}
+#             file_list = glob(self.config['path_to_dataset'] + '/' + subject + '/MyPoseFeatures/D3_Positions/*.cdf')
+#             assert len(file_list) == 30, f"Expected 30 files for subject {subject}, got {len(file_list)}"
+            
+#             for f in file_list:
+#                 action = os.path.splitext(os.path.basename(f))[0]
+                
+#                 if subject == 'S11' and action == 'Directions':
+#                     continue  # Discard corrupted video
+                
+#                 # Use consistent naming convention
+#                 canonical_name = action.replace('TakingPhoto', 'Photo').replace('WalkingDog', 'WalkDog')
+                
+#                 hf = cdflib.CDF(f)
+#                 positions = hf['Pose'].reshape(-1, 32, 3)
+#                 positions /= 1000  # Meters instead of millimeters
+#                 output[subject][canonical_name] = positions.astype('float32')
+
+#         print('Saving 3D poses...')
+#         np.savez_compressed(output_filename_3d, positions_3d=output)
+#         print(f'3D Dataset saved to {output_filename_3d}')
+
+#         # Create 2D pose file
+#         print('\nComputing ground-truth 2D poses...')
+#         self._dataset = Human36mDataset(output_filename_3d, self.config)
+#         output_2d_poses = {}
+
+#         # Resolve paths for the 2D data directory
+#         data_2d_dir = os.path.abspath(self.config.get('data_dir', '.'))
+#         os.makedirs(data_2d_dir, exist_ok=True)
+    
+#         # Define the dynamic output file path for 2D poses
+#         output_filename_2d = os.path.join(data_2d_dir, 'data_2d_h36m_gt.npz')
+
+#         for subject in self._dataset.subjects():
+#             output_2d_poses[subject] = {}
+#             for action in self._dataset[subject].keys():
+#                 anim = self._dataset[subject][action]
+                
+#                 positions_2d = []
+#                 for cam in anim['cameras']:
+#                     pos_3d = world_to_camera(anim['positions'], R=cam['orientation'], t=cam['translation'])
+#                     pos_2d = wrap(project_to_2d, pos_3d, cam['intrinsic'], unsqueeze=True)
+#                     pos_2d_pixel_space = image_coordinates(pos_2d, w=cam['res_w'], h=cam['res_h'])
+#                     positions_2d.append(pos_2d_pixel_space.astype('float32'))
+#                 output_2d_poses[subject][action] = positions_2d
+
+#         print('Saving 2D poses...')
+#         metadata = {
+#             'num_joints': self._dataset.skeleton().num_joints(),
+#             'keypoints_symmetry': [self._dataset.skeleton().joints_left(), self._dataset.skeleton().joints_right()]
+#         }
+#         np.savez_compressed(output_filename_2d, positions_2d=output_2d_poses, metadata=metadata)
+#         print(f'2D Dataset saved to {output_filename_2d}')
+#         print('Done.')
+
+#         # Initialize the internal Human36mDataset
+#         self._dataset.preprocess(self.config, output_filename_2d)        
+#         self.kps_left = self._dataset.kps_left
+#         self.kps_right = self._dataset.kps_right
+#         self.joints_left = self._dataset.joints_left
+#         self.joints_right = self._dataset.joints_right
+#         self.keypoints = self._dataset.keypoints

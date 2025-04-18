@@ -1,0 +1,63 @@
+# General arguments
+
+dataset: 'h36m' #'surreal'
+keypoints: 'gt'
+subjects: 'S1, S5, S6, S7, S8, S9, S11'
+subjects_train: 'S1,S5,S6,S7,S8'
+subjects_test: 'S9,S11'
+actions: '*'
+checkpoint: 'checkpoint'
+# evaluate:  mlp_PoseAug.pt  EvoSkeleton_1_jit.pt martinez_pytorch_model_jit_32_48 
+evaluate: 'Baseline_Martinez_jit.pt'
+render: false
+by_subject: false
+export_training_curves: false
+
+
+model_name: 'martinez'
+
+# flatten_2d: true
+# flatten_3d: true
+
+# Dataset args 
+remove_global_offset: true
+keep_traj_first_pos: false
+
+# Model Type Based on Input and Output
+flattened_coordinate_model: false
+non_video_model: true
+video_model: false 
+zero_center_root: false
+
+
+path_to_dataset: '/dfs9/whayes/preserve/H36M_Dataset/h36m'
+
+data_dir: '/pub/bjvela/PoseLab3D/data'
+
+# Input arguments
+input_shape:
+  batch_size: 64
+  num_frames: null      
+  num_joints: 16         
+  coordinates: 2     
+
+# Output arguments
+output_shape:
+  batch_size: 64
+  num_frames: null      
+  num_joints: 16        
+  coordinates: 3
+
+
+
+test_batch_size: 64
+num_workers: 2
+
+stride: 1
+
+test_time_augmentation: false
+
+
+
+downsample: 1
+

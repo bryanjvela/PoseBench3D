@@ -13,9 +13,12 @@ class Model:
         if not isinstance(config, dict):
             raise TypeError(f"Expected 'config' to be of type 'dict', but got {type(config).__name__}")
         self.config = config
-        self.receptive_field = config['number_of_frames']
-        self.pad = (self.receptive_field - 1) // 2
-        self.causal_shift = 0
+        if config.get('number_of_frames', None):
+            self.receptive_field = config['number_of_frames']
+            self.pad = (self.receptive_field - 1) // 2
+            print("Receptive field: ", self.receptive_field)
+            print("Padding 'pad': ", self.pad)
+            self.causal_shift = 0
         
         model_path = os.path.join(config['checkpoint'], config['evaluate'])
         print('Loading model from', model_path)
@@ -25,9 +28,9 @@ class Model:
         else:
             # Load normally if "jit" is not in the model file name
             self.model = torch.load(model_path, map_location=lambda storage, loc: storage)
+
         self.model.eval()
-        print(type(self.model))
-        #exit()
+        # print(type(self.model))
         model_params = sum(p.numel() for p in self.model.parameters())
         print('INFO: Trainable parameter count:', model_params/1000000, 'Million')
 

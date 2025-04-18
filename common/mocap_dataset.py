@@ -1,3 +1,10 @@
+# Copyright (c) 2018-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+#
+
 import numpy as np
 from common.skeleton import Skeleton
 
@@ -13,8 +20,17 @@ class MocapDataset:
         for subject in self._data.keys():
             for action in self._data[subject].keys():
                 s = self._data[subject][action]
-                if 'positions' in s:
-                    s['positions'] = s['positions'][:, kept_joints]
+                s['positions'] = s['positions'][:, kept_joints]
+
+    # TODO get camera metadata 
+
+    # TODO get world coordinates 
+
+    # TODO get camera coordinates 
+
+    # TODO get 2d 
+
+    # TODO get image ie. by index, image file names 
                 
         
     def __getitem__(self, key):

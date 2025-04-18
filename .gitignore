@@ -1,7 +1,14 @@
 # Ignore models located in checkpoint
 checkpoint/
+
 # Ignore datasets and data located in data/
 data/
+
+# Ignore sandbox testing files
+sandbox/
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

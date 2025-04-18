@@ -1,0 +1,59 @@
+# General arguments
+#model_location: '/pub/bjvela/GLA-GCN/common'
+dataset: 'h36m' #'surreal'
+keypoints: 'gt'
+subjects_train: 'S1,S5,S6,S7,S8'
+subjects_test: 'S9,S11'
+actions: '*'
+checkpoint: 'checkpoint'
+# evaluate: 'linear_mlp_jit.pt' mlp_PoseAug.pt 
+evaluate: 'VideoPose_PoseAug_Optimized_jit.pt'
+render: false
+by_subject: false
+export_training_curves: false
+
+# # Input data
+# hm36m_dir: 'dataset/h36m'
+# pose_in_camera_frame: true  # Learn 3D poses in camera coordinates
+
+model_name: 'VideoPose'
+
+# Dataset args 
+remove_global_offset: true
+keep_traj_first_pos: false
+
+# Model Type Based on Input and Output
+flattened_coordinate_model: false
+non_video_model: true
+video_model: false 
+zero_center_root: false
+
+# '/pub/bjvela/PoseLab3D/datasets/h36m'
+# '/dfs9/whayes/preserve/H36M_Datasets' /dfs9/whayes/preserve/H36M_Datasets
+path_to_dataset: '/dfs9/whayes/preserve/H36M_Dataset/h36m'
+
+data_dir: '/pub/bjvela/PoseLab3D/data'
+
+# Input arguments
+input_shape:
+  batch_size: 64
+  num_frames: null       # Not used in Martinez model; does not use temporal frames
+  num_joints: 16         # Flattened joint features (16 Joints * 2 Coordinates[x,y])
+  coordinates: 2      # Coordinate level not applicable (already flattened) 
+
+# Output arguments
+output_shape:
+  batch_size: 64
+  num_frames: null       # Not used in Martinez model; does not use temporal frames
+  num_joints: 16         # Flattened 3D joint features (16 Joints * 3 Coordinates [x,y,z])
+  coordinates: 3
+
+
+
+test_batch_size: 64
+num_workers: 2
+
+stride: 1
+test_time_augmentation: false
+
+downsample: 1

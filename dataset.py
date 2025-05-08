@@ -83,38 +83,26 @@ class H36M(Dataset):
             d3d_valid /= 1000.0  # convert from mm to meters
         
 
-        # Select the indices to keep
-        # if self.model_info['predict_coordinate_multiple'] and not self.model_info['video_model']:
-        if True:
-            d2d_train = d2d_train[:, self.indices_to_select_2d, :]
-            d2d_valid = d2d_valid[:, self.indices_to_select_2d, :]
 
-            self._data_train['2d'] = self.root_center(np.array(d2d_train))
-            self._data_valid['2d'] = self.root_center(np.array(d2d_valid), self.model_info['root_center_2d_test_input'])
 
-            self._data_train['3d'] = self.root_center(np.array(d3d_train))[:, self.indices_to_select_2d, :]
-            self._data_valid['3d'] = self.root_center(np.array(d3d_valid))[:, self.indices_to_select_2d, :] 
+        d2d_train = d2d_train[:, self.indices_to_select_2d, :]
+        d2d_valid = d2d_valid[:, self.indices_to_select_2d, :]
+
+        self._data_train['2d'] = self.root_center(np.array(d2d_train))
+        self._data_valid['2d'] = self.root_center(np.array(d2d_valid), self.model_info['root_center_2d_test_input'])
+
+        self._data_train['3d'] = self.root_center(np.array(d3d_train))[:, self.indices_to_select_2d, :]
+        self._data_valid['3d'] = self.root_center(np.array(d3d_valid))[:, self.indices_to_select_2d, :] 
             
-            self.mean_3d = np.mean(self._data_train['3d'], axis=0)
-            self.std_3d = np.std(self._data_train['3d'], axis=0)
-            self.mean_2d = np.mean(self._data_train['2d'], axis=0)
-            self.std_2d = np.std(self._data_train['2d'], axis=0)
+        self.mean_3d = np.mean(self._data_train['3d'], axis=0)
+        self.std_3d = np.std(self._data_train['3d'], axis=0)
+        self.mean_2d = np.mean(self._data_train['2d'], axis=0)
+        self.std_2d = np.std(self._data_train['2d'], axis=0)
 
-            if self.model_info['trained_on_normalized_data']:
-                self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.mean_3d, self.std_3d, skip_root=True)
-                self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.mean_2d, self.std_2d, skip_root=True)
-        # else:
-        #     d2d_train = d2d_train[:, self.indices_to_select_2d, :]
-        #     d2d_valid = d2d_valid[:, self.indices_to_select_2d, :]
+        if self.model_info['trained_on_normalized_data']:
+            self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.mean_3d, self.std_3d, skip_root=True)
+            self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.mean_2d, self.std_2d, skip_root=True)
 
-        #     d3d_train = d3d_train[:, self.indices_to_select_2d, :]
-        #     d3d_valid = d3d_valid[:, self.indices_to_select_2d, :]
-
-        #     self._data_train['2d'] = self.root_center(np.array(d2d_train))
-        #     self._data_valid['2d'] = self.root_center(np.array(d2d_valid), self.model_info['root_center_2d_test_input'])
-
-        #     self._data_train['3d'] = self.root_center(np.array(d3d_train))
-        #     self._data_valid['3d'] = self.root_center(np.array(d3d_valid))
 
 
     
@@ -208,7 +196,6 @@ class H36M(Dataset):
             print(f"Total number of test poses (frames): {pose_counter}")
         else:
             print(f"Total number of train poses (frames): {pose_counter}")
-        # You should see ~543,344 if all sequences match Code 1's approach.
 
         return data
    

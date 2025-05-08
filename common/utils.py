@@ -428,3 +428,42 @@ def temporal_consistency_loss(predicted, target, dataset='h36m'):
     loss_diff = 0.5 * dif_seq + 2.0 * mean_velocity_error_train(
         predicted, target, axis=1)
     return loss_diff
+
+
+def normalize_screen_coordinates(X, w, h):
+    assert X.shape[-1] == 2
+
+    return X / w * 2 - [1, h / (w * 1.0)]
+
+def normalize_data(X, mean, std, skip_root=False, fs=None, cs=None):
+    
+    for i in range(X.shape[0]):
+        if not skip_root:
+            if fs is None and cs is None:
+                X[i, :] = np.divide(X[i, :] - mean[:], std[:])
+            else:
+                X[i, :] = np.divide(X[i, :] - fs[i]*mean[:]+cs[i], fs[i]*std[:]+cs[i])
+        else:
+            if fs is None and cs is None:
+                X[i, 1:] = np.divide(X[i, 1:] - mean[1:], std[1:])
+            else:
+                X[i, 1:] = np.divide(X[i, 1:] - fs[i]*mean[1:]+cs[i], fs[i]*std[1:]+cs[i])
+
+    return X
+
+def unnormalize_data(X, mean, std, skip_root=False, fs=None, cs=None):
+
+    XX = np.zeros(X.shape)
+
+    for i in range(X.shape[0]):
+        if not skip_root:
+            if fs is None:
+                XX[i, :] = np.multiply(X[i, :], std[:]) + mean[:]
+            else:
+                XX[i, :] = np.multiply(X[i, :], fs[i]*std[:]+cs[i]) + fs[i]*mean[:]+cs[i]
+        else:
+            if fs is None:
+                XX[i, 1:] = np.multiply(X[i, 1:], std[1:]) + mean[1:]
+            else:
+                XX[i, 1:] = np.multiply(X[i, 1:], fs[i]*std[1:]+cs[i]) + fs[i]*mean[1:]+cs[i]
+    return XX

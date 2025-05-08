@@ -1,0 +1,45 @@
+# General arguments
+dataset: 'surreal'
+keypoints: 'gt'
+checkpoint: 'checkpoint'
+evaluate: 'Trained_With_Normalization/SemGCN_3DPW_14_fully_trained_jit_corrected_final.pt'
+model_type: 'JIT'
+
+
+# Dataset paths
+path_to_dataset_h36m: '/dfs9/whayes/preserve/H36M_Dataset/h36m'
+path_to_dataset_gpa: '/pub/bjvela/CrossDataset/gpa_xyz.npz'
+path_to_dataset_surreal_train: '/pub/bjvela/CrossDataset/surreal_train_compiled.npz'
+path_to_dataset_surreal_test: '/pub/bjvela/CrossDataset/surreal_test_compiled.npz'
+path_to_dataset_3dpw: '/pub/bjvela/CrossDataset/3dpw_wo_invalid.npz'
+data_dir: '/pub/bjvela/PoseLab3D/data'
+
+# Miscellaneous
+num_workers: 2
+print_sample: false 
+save_predictions: false
+
+# Input arguments
+input_shape:
+  batch_size: 64
+  num_frames: null       
+  num_joints: 14         
+  coordinates: 2      
+
+# Output arguments
+output_shape:
+  batch_size: 64
+  num_frames: null       
+  num_joints: 14         
+  coordinates: 3
+
+# Model info
+model_info:
+  flattened_coordinate_model: false
+  output_3d: 'meters'
+  root_center_2d_test_input: true
+  normalize_2d_to_minus_one_to_one: false
+  trained_on_normalized_data: true
+  video_model: false
+
+

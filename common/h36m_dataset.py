@@ -401,7 +401,10 @@ class Human36mDataset(MocapDataset):
                         self.keypoints[subject][action][cam_idx] = self.keypoints[subject][action][cam_idx][:mocap_length]
 
                 assert len(self.keypoints[subject][action]) == len(self[subject][action]['positions_3d'])
-
+        print(self.keypoints.keys())
+        print(self.keypoints['S1'].keys())
+        print((self.keypoints['S1']['Directions']))
+        exit(0)
         for subject in self.keypoints.keys():
             for action in self.keypoints[subject]:
                 for cam_idx, kps in enumerate(self.keypoints[subject][action]):
@@ -461,7 +464,7 @@ class Human36mDataset(MocapDataset):
         
         return poses_3d_all, poses_2d_all
 
-
+    
     def organize_actions(self):
         all_actions = {}
         all_actions_by_subject = {}

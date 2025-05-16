@@ -103,16 +103,17 @@ The following models have been trained with normalized 2D inputs (e.g., z-score 
 
 > 📂 **Reminder**: Place all normalized model checkpoints inside the `checkpoint/` directory.
 
-| Model Name                        | GitHub Repo                                      | Model File (.pt / .onnx)                                   |
-|----------------------------------|--------------------------------------------------|-------------------------------------------------------------|
-| Martinez (Trained on H36M, Normalized)      | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1JWzkf91K0k-XrsTYXYQCY6Q6nt1tqiws/view?usp=sharing)        |
-| Martinez (Trained on GPA, Normalized)       | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1IH-WSaQbHtP75ku-6dIlN6V-B6Z-GzwM/view?usp=sharing)         |
-| Martinez (Trained on 3DPW, Normalized)      | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1cP5rhK4mNASOZn6HI3Tht8DMwAUnDw_a/view?usp=sharing)        |
-| Martinez (Trained on SURREAL, Normalized)   | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/16XqK5GMbuM4KVcP82ZjWaMI10uMP__gj/view?usp=sharing)     |
-| SEM-GCN (Trained on H36M, Normalized)       | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1PA-kDD587OsSVm6ktScFGd4Wkgg5fQB8/view?usp=sharing)          |
-| SEM-GCN (Trained on GPA, Normalized)        | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1LWQe-XLREAOqWuC5qzzGq7_HWobT89Zh/view?usp=sharing)           |
-| SEM-GCN (Trained on 3DPW, Normalized)       | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/12hfkzq1GrvSWuuLZQFj7ZFW40VgVJy_E/view?usp=sharing)          |
-| SEM-GCN (Trained on SURREAL, Normalized)    | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1tfgaR8Oksy25nE953K13K1vTg7fH54lh/view?usp=sharing)       |
+| Model Name                              | Model File (.pt / .onnx)                                   |
+|----------------------------------------|-------------------------------------------------------------|
+| Martinez (Trained on H36M, Normalized)      | [Download Checkpoint](https://drive.google.com/file/d/1JWzkf91K0k-XrsTYXYQCY6Q6nt1tqiws/view?usp=sharing)        |
+| Martinez (Trained on GPA, Normalized)       | [Download Checkpoint](https://drive.google.com/file/d/1IH-WSaQbHtP75ku-6dIlN6V-B6Z-GzwM/view?usp=sharing)         |
+| Martinez (Trained on 3DPW, Normalized)      | [Download Checkpoint](https://drive.google.com/file/d/1cP5rhK4mNASOZn6HI3Tht8DMwAUnDw_a/view?usp=sharing)        |
+| Martinez (Trained on SURREAL, Normalized)   | [Download Checkpoint](https://drive.google.com/file/d/16XqK5GMbuM4KVcP82ZjWaMI10uMP__gj/view?usp=sharing)     |
+| SEM-GCN (Trained on H36M, Normalized)       | [Download Checkpoint](https://drive.google.com/file/d/1PA-kDD587OsSVm6ktScFGd4Wkgg5fQB8/view?usp=sharing)          |
+| SEM-GCN (Trained on GPA, Normalized)        | [Download Checkpoint](https://drive.google.com/file/d/1LWQe-XLREAOqWuC5qzzGq7_HWobT89Zh/view?usp=sharing)           |
+| SEM-GCN (Trained on 3DPW, Normalized)       | [Download Checkpoint](https://drive.google.com/file/d/12hfkzq1GrvSWuuLZQFj7ZFW40VgVJy_E/view?usp=sharing)          |
+| SEM-GCN (Trained on SURREAL, Normalized)    | [Download Checkpoint](https://drive.google.com/file/d/1tfgaR8Oksy25nE953K13K1vTg7fH54lh/view?usp=sharing)       |
+
 
 
 

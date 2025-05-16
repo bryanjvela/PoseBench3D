@@ -253,64 +253,6 @@ class Human36mDataset(MocapDataset):
         
         # Load serialized dataset
         data = np.load(path, allow_pickle=True)['positions_3d'].item()
-        # subject_point = 'S1'
-        # action_point  = 'Photo'      # Example action name
-        # frame_idx_point = 0          # Which frame to sample
-
-        # raw_3d = data[subject_point][action_point]          # shape (num_frames, 32, 3)
-        # sample_3d_32 = raw_3d[frame_idx_point]           # shape (32, 3)
-
-        # joints_to_remove = []
-        # for i, x in enumerate(H36M_NAMES):
-        #     if x == '' or x == 'Neck/Nose':  # Remove 'Nose' to make SH and H36M 2D poses have the same dimension
-        #         joints_to_remove.append(i)
-        # keep_indices = [i for i in range(32) if i not in joints_to_remove]
-        # sample_3d_16 = sample_3d_32[keep_indices]  # shape (16, 3)
-        # np.save("sample_3d_16.npy", sample_3d_16)
-        # exit(0)
-        # print(f"Single 3D Pose Datapoint: {sample_3d_16}")
-        # limb_lengths_3d = calculate_limb_lengths(sample_3d_16)
-        # limb_lengths_3d = np.array(limb_lengths_3d) * 1000
-        # print("3D Limb Lengths:", limb_lengths_3d)
-
-        #         # Print limb lengths with their corresponding joint names
-        # print("\n===== 3D Limb Lengths =====")
-        # for name, length in zip(EDGE_NAMES_16JNTS, limb_lengths_3d):
-        #     print(f"{name}: {length:.2f} mm")
-        # exit(0)
-
-        # # Prepare an empty list to store all 3D poses
-        # all_poses_3d = []
-
-        # # Iterate through all subjects and actions
-        # for subject, actions in data.items():
-        #     for action_name, positions in actions.items():  # positions shape: (num_frames, 32, 3)
-                
-        #         # Remove unwanted joints (convert from 32 to 16 joints)
-        #         joints_to_remove = []
-        #         for i, x in enumerate(H36M_NAMES):
-        #             if x == '' or x == 'Neck/Nose':  # Remove 'Nose' to match 16-joint format
-        #                 joints_to_remove.append(i)
-
-        #         keep_indices = [i for i in range(32) if i not in joints_to_remove]
-        #         positions_16 = positions[:, keep_indices, :]  # shape: (num_frames, 16, 3)
-        
-        #         # Store processed 3D poses
-        #         all_poses_3d.append(positions_16)
-
-        # # Stack all frames across all subjects and actions
-        # all_poses_3d = np.vstack(all_poses_3d)  # Shape: (Total_frames, 16, 3)
-
-        # # Compute average limb lengths across entire dataset
-        # avg_limb_lengths_3d, _, _ = calculate_avg_limb_lengths(all_poses_3d)
-
-        # # Convert to millimeters
-        # limb_lengths_3d = np.array(avg_limb_lengths_3d) * 1000
-
-        # # Print results
-        # print("\n===== Average 3D Limb Lengths Across Dataset =====")
-        # for name, length in zip(EDGE_NAMES_16JNTS, limb_lengths_3d):
-        #     print(f"{name}: {length:.2f} mm")
 
         self._data = {}
         for subject, actions in data.items():

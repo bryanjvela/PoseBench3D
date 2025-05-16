@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from common.loss import mpjpe, p_mpjpe
+from common.loss import mpjpe, p_mpjpe, p_mpjpe_per_joint, mpjpe_per_joint
 from model import Model  # Import Model from model.py
 from dataset import Dataset  # If Dataset is from dataset.py
 from torch.utils.data import DataLoader
@@ -8,6 +8,7 @@ from common.generators import PoseGenerator
 from common.utils import unnormalize_data
 import os
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
+from poseutils.metrics import calculate_jpe
 
 
 class Evaluation:
@@ -81,9 +82,10 @@ class Evaluation:
         epoch_loss_3d_pos = 0
         epoch_loss_3d_pos_procrustes = 0
 
-        # only needed if save_predictions = True
-        if self.model.config['save_predictions']:
+        # initialise the collectors if we will need them 
+        if self.model.config.get('save_predictions') or self.model.config.get('per_joint_error'):
             all_outputs, all_targets, all_inputs = [], [], []
+
 
         # These booleans control one-time printing
         printInput_Target_Shape = True
@@ -134,9 +136,14 @@ class Evaluation:
                         targets_3d = targets_3d.reshape((-1, self.dataset.input_shape['num_joints'], 3))
                         outputs_3d = outputs_3d.reshape((-1, self.dataset.input_shape['num_joints'], 3))
                         inputs_2d = inputs_2d.reshape((-1, self.dataset.input_shape['num_joints'], 2)).cpu().numpy()
-                        targets_3d = unnormalize_data(targets_3d, self.dataset.mean_3d, self.dataset.std_3d, skip_root=True)
-                        outputs_3d = unnormalize_data(outputs_3d, self.dataset.mean_3d, self.dataset.std_3d, skip_root=True)
-                        inputs_2d = unnormalize_data(inputs_2d, self.dataset.mean_2d, self.dataset.std_2d, skip_root=True)
+                        if self.dataset.config.get('test_using_train_mean_and_std', False):
+                            targets_3d = unnormalize_data(targets_3d, self.dataset.train_mean_3d, self.dataset.train_std_3d, skip_root=True)
+                            outputs_3d = unnormalize_data(outputs_3d, self.dataset.train_mean_3d, self.dataset.train_std_3d, skip_root=True)
+                            inputs_2d = unnormalize_data(inputs_2d, self.dataset.train_mean_2d, self.dataset.train_std_2d, skip_root=True)
+                        else:
+                            targets_3d = unnormalize_data(targets_3d, self.dataset.mean_3d, self.dataset.std_3d, skip_root=True)
+                            outputs_3d = unnormalize_data(outputs_3d, self.dataset.mean_3d, self.dataset.std_3d, skip_root=True)
+                            inputs_2d = unnormalize_data(inputs_2d, self.dataset.mean_2d, self.dataset.std_2d, skip_root=True)
 
                     # Convert outputs and targets to torch if they are numpy
                     if isinstance(outputs_3d, np.ndarray):
@@ -154,10 +161,12 @@ class Evaluation:
                         self._print_one_data_point(inputs_2d, outputs_3d, targets_3d)
                         printOneTargetAndOutputDataPoint = False
                     
-                    if self.model.config['save_predictions']:
+                    # ─── inside the loop, where you append results ───────────────────────────────
+                    if self.model.config.get('save_predictions') or self.model.config.get('per_joint_error'):
                         all_outputs.append(outputs_3d.cpu().numpy())
                         all_targets.append(targets_3d.cpu().numpy())
                         all_inputs.append(inputs_2d.cpu().numpy() if isinstance(inputs_2d, torch.Tensor) else inputs_2d)
+
 
 
                     # -- Compute errors (MPJPE, P-MPJPE) --
@@ -175,11 +184,13 @@ class Evaluation:
                     progress.update(task, advance=1, mpjpe=e1, pmjpe=e2)
 
 
-                if self.model.config['save_predictions']:
+                # Only concatenate once if either flag is set
+                if self.model.config['save_predictions'] or self.model.config['per_joint_error']:
                     all_outputs = np.concatenate(all_outputs, axis=0)
                     all_targets = np.concatenate(all_targets, axis=0)
                     all_inputs = np.concatenate(all_inputs, axis=0)
 
+                if self.model.config['save_predictions']:
                     # Format folder name as Predictions_{DATASET}
                     dataset_folder = f"Predictions_{self.dataset.config['dataset'].upper()}"
                     os.makedirs(dataset_folder, exist_ok=True)
@@ -192,8 +203,63 @@ class Evaluation:
 
                     # Save predictions
                     np.savez_compressed(save_path, inputs2D=all_inputs, targets3D=all_targets, outputs3D=all_outputs)
-                    print(f"Saved predictions to {save_path} with {all_outputs.shape[0]} predictions, {all_targets.shape[0]} targets, and {all_inputs.shape[0]} inputs")
+                    print(f"Saved predictions to {save_path} with {all_outputs.shape[0]} predictions, "
+                        f"{all_targets.shape[0]} targets, and {all_inputs.shape[0]} inputs")
 
+                if self.model.config['per_joint_error']:
+                    # Squeeze frame dimension if present
+                    all_outputs_flat = all_outputs.squeeze(1) if all_outputs.ndim == 4 else all_outputs
+                    all_targets_flat = all_targets.squeeze(1) if all_targets.ndim == 4 else all_targets
+
+                    mpjpe_joints = mpjpe_per_joint(all_outputs_flat, all_targets_flat)
+                    pmpjpe_joints = p_mpjpe_per_joint(all_outputs_flat, all_targets_flat)
+
+                    # Convert to mm if needed
+                    if self.dataset.model_info['output_3d'] != 'meters':
+                        mpjpe_joints *= 1000
+                        pmpjpe_joints *= 1000
+
+                    # Print horizontal lists
+                    mpjpe_list_str = " ".join([f"{val:.2f}" for val in mpjpe_joints])
+                    pmpjpe_list_str = " ".join([f"{val:.2f}" for val in pmpjpe_joints])
+
+                    print("Per-Joint MPJPE (mm):")
+                    print(mpjpe_list_str)
+                    print("\nPer-Joint P-MPJPE (mm):")
+                    print(pmpjpe_list_str)
+
+                    print(f"\nMean MPJPE: {mpjpe_joints.mean():.2f} mm")
+                    print(f"Mean P-MPJPE: {pmpjpe_joints.mean():.2f} mm")
+
+
+
+    def p_mpjpe_per_joint(self, predicted: np.ndarray, target: np.ndarray) -> np.ndarray:
+        """
+        Per-joint PA-MPJPE (Protocol-2).
+        predicted, target: (N, J, 3) numpy arrays
+        returns          : (J,)     numpy array – mean error for each joint
+        """
+        # --- rigid alignment (same math as your p_mpjpe, but vectorised) -----------
+        muX, muY = target.mean(1, keepdims=True), predicted.mean(1, keepdims=True)
+        X0,  Y0  = target - muX, predicted - muY
+        normX, normY = np.linalg.norm(X0, axis=(1, 2), keepdims=True), np.linalg.norm(Y0, axis=(1, 2), keepdims=True)
+        X0,  Y0  = X0 / normX, Y0 / normY
+
+        H   = np.matmul(X0.transpose(0, 2, 1), Y0)
+        U,  _, Vt = np.linalg.svd(H)
+        V   = Vt.transpose(0, 2, 1)
+        R   = np.matmul(V, U.transpose(0, 2, 1))
+        detR = np.sign(np.linalg.det(R))[:, None, None]
+        R  *= detR
+        tr  = (R * H).sum((1, 2), keepdims=True)
+
+        a   = tr * normX / normY
+        t   = muX - a * (muY @ R)
+        pred_aligned = a * (predicted @ R) + t
+        # ---------------------------------------------------------------------------
+
+        # L2 error per joint, then average over N frames
+        return np.linalg.norm(pred_aligned - target, axis=2).mean(axis=0)
 
 
 

@@ -5,13 +5,17 @@ checkpoint: 'checkpoint'
 evaluate: 'Trained_With_Normalization/martinez_h36m_model.onnx'
 model_type: 'ONNX'
 
+test_using_train_mean_and_std: false
+train_dataset: 'h36m'
+per_joint_error: false
+
 # Dataset paths
-path_to_dataset_h36m: '/dfs9/whayes/preserve/H36M_Dataset/h36m'
-path_to_dataset_gpa: '/pub/bjvela/CrossDataset/gpa_xyz.npz'
-path_to_dataset_surreal_train: '/pub/bjvela/CrossDataset/surreal_train_compiled.npz'
-path_to_dataset_surreal_test: '/pub/bjvela/CrossDataset/surreal_test_compiled.npz'
-path_to_dataset_3dpw: '/pub/bjvela/CrossDataset/3dpw_wo_invalid.npz'
-data_dir: '/pub/bjvela/PoseLab3D/data'
+path_to_dataset_h36m: /path/to/h36m_dataset
+path_to_dataset_gpa: /path/to/gpa_dataset_file.json
+path_to_dataset_surreal_train: /path/to/surreal_train_data.npz
+path_to_dataset_surreal_test: /path/to/surreal_test_data.npz
+path_to_dataset_3dpw: /path/to/3dpw_dataset_folder
+data_dir: /path/to/data_directory
 
 # Miscellaneous
 num_workers: 2

@@ -243,3 +243,76 @@ def mpjse(predicted_seq, target_seq, interval_set = [12]):
     Mean per-joint speed error (i.e. mean Euclidean distance),
     """
     assert predicted_seq.shape == target_seq.shape
+
+
+
+def mpjpe_per_joint(predicted, target):
+    """
+    Compute per-joint MPJPE.
+
+    :param predicted: (N, J, 3) predicted 3D coordinates
+    :param target:    (N, J, 3) target 3D coordinates
+    :return:          (J,) array of MPJPE for each joint
+    """
+    assert predicted.shape == target.shape
+    # Euclidean distance per joint for each sample => shape (N, J)
+    dist = np.linalg.norm(predicted - target, axis=2)
+    # Average across samples => shape (J,)
+    return dist.mean(axis=0)
+
+
+
+def p_mpjpe_per_joint(predicted, target):
+    """
+    Compute per-joint MPJPE after Procrustes alignment (scale, rotation, translation)
+    for each sample.
+
+    :param predicted: (N, J, 3)
+    :param target:    (N, J, 3)
+    :return:          (J,) array with PA-MPJPE for each joint, averaged over samples
+    """
+    assert predicted.shape == target.shape
+    N, J, _ = predicted.shape
+    
+    # 1. Compute centroids
+    muX = np.mean(target, axis=1, keepdims=True)     # (N, 1, 3)
+    muY = np.mean(predicted, axis=1, keepdims=True)  # (N, 1, 3)
+
+    # 2. Subtract centroids
+    X0 = target - muX    # (N, J, 3)
+    Y0 = predicted - muY # (N, J, 3)
+
+    # 3. Compute Frobenius norms
+    normX = np.sqrt(np.sum(X0**2, axis=(1, 2), keepdims=True))  # (N, 1, 1)
+    normY = np.sqrt(np.sum(Y0**2, axis=(1, 2), keepdims=True))  # (N, 1, 1)
+
+    # 4. Normalize
+    X0 /= normX
+    Y0 /= normY
+
+    # 5. Compute the optimal rotation via SVD
+    H = np.matmul(X0.transpose(0,2,1), Y0)  # (N, 3, 3)
+    U, s, Vt = np.linalg.svd(H)
+    V = Vt.transpose(0, 2, 1)
+    R = np.matmul(V, U.transpose(0, 2, 1))  # (N, 3, 3)
+
+    # Fix improper rotations (i.e. reflection)
+    detR = np.linalg.det(R)  # shape (N,)
+    # For those with det(R) < 0, we flip the last column in V
+    idx = detR < 0
+    V[idx, :, -1] *= -1
+    s[idx, -1]     *= -1
+    R = np.matmul(V, U.transpose(0, 2, 1))
+
+    # 6. Compute scale
+    tr = np.sum(s, axis=1, keepdims=True)[:, np.newaxis]  # (N, 1, 1)
+    a = tr * normX / normY                                 # (N, 1, 1)
+
+    # 7. Apply the transformation
+    predicted_aligned = a * np.matmul(predicted - muY, R) + muX  # (N, J, 3)
+
+    # 8. Now compute L2 distance per joint for each sample
+    dist = np.linalg.norm(predicted_aligned - target, axis=2)    # (N, J)
+
+    # 9. Average across samples => shape (J,)
+    return dist.mean(axis=0)

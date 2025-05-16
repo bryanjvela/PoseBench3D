@@ -20,7 +20,6 @@ class Model:
         self.model_info = config['model_info']
         self.model_type = config.get('model_type', 'Pytorch')  # "JIT", "Pytorch", or "ONNX"
 
-        # If you have extra setup logic for frames/padding, you can keep it here
         if config.get('number_of_frames', None):
             self.receptive_field = config['number_of_frames']
             print("==> Receptive field: ", self.receptive_field)

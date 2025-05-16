@@ -9,7 +9,9 @@ import common.camera as camera
 from common.h36m_dataset import h36m_cameras_extrinsic_params, h36m_cameras_intrinsic_params
 from common.utils import normalize_screen_coordinates, normalize_data
 from poseutils.constants import dataset_indices
-
+from poseutils.props import calculate_avg_limb_lengths
+from common.process_datasets import DPW3
+from common.process_datasets import GPA_Module
 
 class Dataset:
     def data(self):# -> Tuple[List[torch.float32], List[torch.float32]]:
@@ -17,8 +19,7 @@ class Dataset:
     
 
 class H36M(Dataset):
-
-    def __init__(self, path, config):
+    def __init__(self, path, config, train_mean_2d=None, train_std_2d=None, train_mean_3d=None, train_std_3d=None):
         super(H36M, self).__init__()
 
         self.config = config
@@ -37,6 +38,11 @@ class H36M(Dataset):
         self.mean_3d = 0.0
         self.std_3d = 0.0
 
+        self.train_mean_2d = train_mean_2d
+        self.train_std_2d = train_std_2d
+        self.train_mean_3d = train_mean_3d
+        self.train_std_3d = train_std_3d
+
 
         self.cameras = []
         self.load_data(path, self.config)
@@ -45,8 +51,12 @@ class H36M(Dataset):
         print("Path: ", path)
 
         self.input_shape = config['input_shape']
-        self.indices_to_select_2d, self.indices_to_select_3d = dataset_indices(config['dataset'], self.input_shape['num_joints']) # [0, 6, 7, 8, 1, 2, 3, 12, 13, 15, 25, 26, 27, 17, 18, 19]
-        # indices_to_select_3d = [1, 2, 3, 6, 7, 8, 12, 13, 14, 15, 17, 18, 19, 25, 26, 27]
+
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            self.indices_to_select_2d, self.indices_to_select_3d = dataset_indices(config['train_dataset'], self.input_shape['num_joints']) 
+        else:
+            self.indices_to_select_2d, self.indices_to_select_3d = dataset_indices(config['dataset'], self.input_shape['num_joints']) 
+            
 
 
         self.cameras, self._cameras = self.prepare_cameras(os.path.join(path, "metadata.xml"))
@@ -59,7 +69,7 @@ class H36M(Dataset):
            "Sitting","SittingDown","Smoking","Waiting",
            "WalkDog","Walking","WalkTogether"]
 
-        cache_path = os.path.join(path, 'h36m_raw_data.npz')
+        cache_path = os.path.join(path, 'h36m_test_train_data.npz')
         if os.path.exists(cache_path):
             print(f"Loading cached datasets from {cache_path}")
             data = np.load(cache_path, allow_pickle=True)
@@ -99,9 +109,17 @@ class H36M(Dataset):
         self.mean_2d = np.mean(self._data_train['2d'], axis=0)
         self.std_2d = np.std(self._data_train['2d'], axis=0)
 
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            print("Returning early because test_using_train_mean_and_std is True and train_mean_2d is None in Training Dataset")
+            return
+
         if self.model_info['trained_on_normalized_data']:
-            self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.mean_3d, self.std_3d, skip_root=True)
-            self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.mean_2d, self.std_2d, skip_root=True)
+            if self.config.get('test_using_train_mean_and_std', False):
+                self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.train_mean_3d, self.train_std_3d, skip_root=True)
+                self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.train_mean_2d, self.train_std_2d, skip_root=True)
+            else:
+                self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.mean_3d, self.std_3d, skip_root=True)
+                self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.mean_2d, self.std_2d, skip_root=True)
 
 
 
@@ -296,7 +314,7 @@ class H36M(Dataset):
 
 class GPA(Dataset):
 
-    def __init__(self, path, config):
+    def __init__(self, path, config, train_mean_2d=None, train_std_2d=None, train_mean_3d=None, train_std_3d=None):
         
         super(GPA, self).__init__()
         self.cameras = None
@@ -310,21 +328,47 @@ class GPA(Dataset):
         self.mean_3d = 0.0
         self.std_3d = 0.0
 
+        self.train_mean_2d = train_mean_2d
+        self.train_std_2d = train_std_2d
+        self.train_mean_3d = train_mean_3d
+        self.train_std_3d = train_std_3d
+
 
         self.load_data(path, config)
 
     def load_data(self, path, config):
 
-        data = np.load(path, allow_pickle=True, encoding='latin1')['data'].item()
+        cache_path = os.path.join(path, 'gpa_train_test_data.npz')
+        if os.path.exists(cache_path):
+            print(f"Loading cached datasets from {cache_path}")
+            data = np.load(cache_path, allow_pickle=True)
+            all_data = data['data'].item()   
+            data_train = all_data['train']
+            data_valid = all_data['test']
+        else:
+            print("Building datasets from scratch...")
+            gpa = GPA_Module(path)
+            self.all_data = gpa.all_data
+            data_train = self.all_data['train']
+            data_valid = self.all_data['test']
+            # print(data_train.shape)
+            # print(data_valid.shape)
 
-        data_train = data['train']
-        data_valid = data['test']
+            print(f"Saving datasets to {cache_path}")
+            np.savez_compressed(
+                cache_path,
+                data={"train": data_train, "test": data_valid}
+            )
+
 
         self.model_info = config['model_info']
-        # indices_to_select = [0, 24, 25, 26, 29, 30, 31, 2, 5, 6, 7, 17, 18, 19, 9, 10, 11]
-        # indices_to_sort = [0, 4, 5, 6, 1, 2, 3, 7, 8, 10, 14, 15, 16, 11, 12, 13]
         self.input_shape = config['input_shape']
-        to_select, to_sort = dataset_indices(config['dataset'], self.input_shape['num_joints'])
+
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            to_select, to_sort = dataset_indices(config['train_dataset'], self.input_shape['num_joints']) 
+        else:
+            to_select, to_sort = dataset_indices(config['dataset'], self.input_shape['num_joints']) 
+        
 
 
         self._data_train['2d'] = data_train["2d"].reshape(-1,34,2)[:, to_select,  :][:, to_sort, :]
@@ -351,7 +395,15 @@ class GPA(Dataset):
         self.mean_3d = np.mean(self._data_train['3d'], axis=0)
         self.std_3d = np.std(self._data_train['3d'], axis=0)
 
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            print("Returning early because test_using_train_mean_and_std is True and train_mean_2d is None in Training Dataset")
+            return
+
         if self.model_info['trained_on_normalized_data']:
+            if self.config.get('test_using_train_mean_and_std', False):
+                self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.train_mean_3d, self.train_std_3d, skip_root=True)
+                self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.train_mean_2d, self.train_std_2d, skip_root=True)
+            else:
                 self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.mean_3d, self.std_3d, skip_root=True)
                 self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.mean_2d, self.std_2d, skip_root=True)
 
@@ -392,7 +444,7 @@ class GPA(Dataset):
 
 class Surreal(Dataset):
 
-    def __init__(self, path_train, path_valid, config):
+    def __init__(self, path_train, path_valid, config, train_mean_2d=None, train_std_2d=None, train_mean_3d=None, train_std_3d=None):
         super(Surreal, self).__init__()
 
         self.cameras = None
@@ -407,6 +459,11 @@ class Surreal(Dataset):
         self.mean_3d = 0.0
         self.std_3d = 0.0
 
+        self.train_mean_2d = train_mean_2d
+        self.train_std_2d = train_std_2d
+        self.train_mean_3d = train_mean_3d
+        self.train_std_3d = train_std_3d
+
         self.load_data(path_train, path_valid, config)
 
     def load_data(self, path_train, path_valid, config):
@@ -414,12 +471,15 @@ class Surreal(Dataset):
         data_train = np.load(path_train, allow_pickle=True)
         data_valid = np.load(path_valid, allow_pickle=True)
 
-        # indices_to_arrange = [0, 2, 1, 3, 5, 4, 6, 8, 7, 9, 11, 10, 12, 14, 13, 15, 17, 16, 19, 18, 21, 20, 23, 22]
-        # indices_to_select = [0, 1, 4, 7, 2, 5, 8, 6, 12, 15, 17, 19, 21, 16, 18, 20]
+    
+
 
         self.input_shape = config['input_shape']
         self.model_info = config['model_info']
-        to_select, to_sort = dataset_indices(config['dataset'], self.input_shape['num_joints'])
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            to_select, to_sort = dataset_indices(config['train_dataset'], self.input_shape['num_joints']) 
+        else:
+            to_select, to_sort = dataset_indices(config['dataset'], self.input_shape['num_joints']) 
 
         # random_idx = np.random.choice(data_train["data_3d"].shape[0], data_train["data_3d"].shape[0]//6)
 
@@ -435,6 +495,10 @@ class Surreal(Dataset):
 
         self._data_valid['2d'] = data_valid["data_2d"][:, to_select, :][:, to_sort,  :]
         self._data_valid['3d'] = data_valid["data_3d"][:, to_select, :][:, to_sort,  :]
+
+
+        print("One sample of 2D Train set: ", self._data_train['2d'][0])
+        print("One sample of 3D Train set: ", self._data_train['3d'][0])
 
         if self.model_info['normalize_2d_to_minus_one_to_one']:
             self._data_valid['2d'] = normalize_screen_coordinates(self._data_valid['2d'], w=320, h=240)
@@ -455,8 +519,16 @@ class Surreal(Dataset):
         self.mean_3d = np.mean(self._data_train['3d'], axis=0)
         self.std_3d = np.std(self._data_train['3d'], axis=0)
 
+
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            print("Returning early because test_using_train_mean_and_std is True and train_mean_2d is None in Training Dataset")
+            return
     
         if self.model_info['trained_on_normalized_data']:
+            if self.config.get('test_using_train_mean_and_std', False):
+                self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.train_mean_3d, self.train_std_3d, skip_root=True)
+                self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.train_mean_2d, self.train_std_2d, skip_root=True)
+            else:
                 self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.mean_3d, self.std_3d, skip_root=True)
                 self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.mean_2d, self.std_2d, skip_root=True)
 
@@ -489,14 +561,15 @@ class Surreal(Dataset):
         clean_3d = self._data_valid['3d'][keep_mask]
         clean_2d = self._data_valid['2d'][keep_mask]
         print(f"Removed {len(corrupted_samples)} corrupted samples "f"({100*len(corrupted_samples)/total_samples:.4f}% of data).")
+
+
         return clean_3d, clean_2d
-        #return self._data_valid['3d'], self._data_valid['2d']
     
 
 
 class ThreeDPW(Dataset):
 
-    def __init__(self, path, config):
+    def __init__(self, path, config, train_mean_2d=None, train_std_2d=None, train_mean_3d=None, train_std_3d=None):
         super(ThreeDPW, self).__init__()
 
         self.cameras = None
@@ -510,6 +583,11 @@ class ThreeDPW(Dataset):
         self.std_2d = 0.0
         self.mean_3d = 0.0
         self.std_3d = 0.0
+
+        self.train_mean_2d = train_mean_2d
+        self.train_std_2d = train_std_2d
+        self.train_mean_3d = train_mean_3d
+        self.train_std_3d = train_std_3d
 
         self.load_data(path, config)
 
@@ -530,26 +608,49 @@ class ThreeDPW(Dataset):
         return data_2d_re
 
     def load_data(self, path, config):
-        filename = os.path.splitext(os.path.basename(path))[0]
 
-        data = np.load(path, allow_pickle=True, encoding='latin1')['data'].item()
-        data_train = data['train']
-        data_valid = data['test']
+        cache_path = os.path.join(path, '3dpw_test_train_data.npz')
+        if os.path.exists(cache_path):
+            print(f"Loading cached datasets from {cache_path}")
+            data = np.load(cache_path, allow_pickle=True)
+            all_data = data['data'].item()   
+            data_train = all_data['train']
+            data_valid = all_data['test']
+        else:
+            print("Building datasets from scratch...")
+            dpw3 = DPW3(path)
+            self.all_data = dpw3.all_data
+            data_train = self.all_data['train']
+            data_valid = self.all_data['test']
 
+            print(f"Saving datasets to {cache_path}")
+            np.savez_compressed(
+                cache_path,
+                data={"train": data_train, "test": data_valid}
+            )
 
         self.input_shape = config['input_shape']    
         self.model_info = config['model_info']
 
-        indices_to_select, _ =  dataset_indices(self.config['dataset'], self.input_shape['num_joints'])
+        print("Num joints: ", self.input_shape['num_joints'])
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            indices_to_select, _ = dataset_indices(config['train_dataset'], self.input_shape['num_joints']) 
+        else:
+            indices_to_select, _ = dataset_indices(config['dataset'], self.input_shape['num_joints']) 
 
-        # rects_train = data_train["combined_r2d"]
-        # rects_valid = data_valid["combined_r2d"]
+        print("Shape before reshape:", data_valid["2d"].shape)
+        print("Shape before reshape:", data_valid["3d"].shape)
 
-        self._data_train['2d'] = data_train["combined_2d"][:, indices_to_select,  :]
-        self._data_train['3d'] = data_train["combined_3d_cam"][:, indices_to_select,  :]*1000
+        # Updated to match new naming
+        self._data_train['2d'] = data_train["2d"][:, indices_to_select, :]
+        self._data_train['3d'] = data_train["3d"][:, indices_to_select, :] * 1000
 
-        self._data_valid['2d'] = data_valid["combined_2d"][:, indices_to_select,  :]
-        self._data_valid['3d'] = data_valid["combined_3d_cam"][:, indices_to_select,  :]*1000
+        self._data_valid['2d'] = data_valid["2d"][:, indices_to_select, :]
+        self._data_valid['3d'] = data_valid["3d"][:, indices_to_select, :] * 1000
+
+        print("Shape after reshape:", self._data_valid['2d'].shape)
+        print("Shape after reshape:", self._data_valid['3d'].shape)
+
 
         if self.model_info['normalize_2d_to_minus_one_to_one']:
             self._data_valid['2d'] = normalize_screen_coordinates(self._data_valid['2d'], w=1080, h=1920)
@@ -568,10 +669,22 @@ class ThreeDPW(Dataset):
         self.mean_2d = np.mean(self._data_train['2d'], axis=0)
         self.std_2d = np.std(self._data_train['2d'], axis=0)
 
+        if self.config.get('test_using_train_mean_and_std', False) is True and self.train_mean_2d is None:
+            print("Returning early because test_using_train_mean_and_std is True and train_mean_2d is None in Training Dataset")
+            return
 
         if self.model_info['trained_on_normalized_data']:
+            if self.config.get('test_using_train_mean_and_std', False):
+                self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.train_mean_3d, self.train_std_3d, skip_root=True)
+                self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.train_mean_2d, self.train_std_2d, skip_root=True)
+            else:
                 self._data_valid['3d'] = normalize_data(self._data_valid['3d'], self.mean_3d, self.std_3d, skip_root=True)
                 self._data_valid['2d'] = normalize_data(self._data_valid['2d'], self.mean_2d, self.std_2d, skip_root=True)
+
+        print("Shape before reshape:", self._data_valid['2d'].shape)
+        print("Expected shape after reshape:", (-1, self.input_shape['num_joints']*2))
+        
+
 
     def data(self):
         if self.model_info['flattened_coordinate_model']:
@@ -583,5 +696,8 @@ class ThreeDPW(Dataset):
         if apply_root_centering:
             data = data - data[:, :1, :]
         return data
+
+
+
 
 

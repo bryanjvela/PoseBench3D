@@ -6,17 +6,18 @@ evaluate: 'Not_Trained_With_Normalization/MHFormer_16_fully_trained_jit_correcte
 model_type: 'JIT'
 
 # Dataset paths
-path_to_dataset_h36m: '/dfs9/whayes/preserve/H36M_Dataset/h36m'
-path_to_dataset_gpa: '/pub/bjvela/CrossDataset/gpa_xyz.npz'
-path_to_dataset_surreal_train: '/pub/bjvela/CrossDataset/surreal_train_compiled.npz'
-path_to_dataset_surreal_test: '/pub/bjvela/CrossDataset/surreal_test_compiled.npz'
-path_to_dataset_3dpw: '/pub/bjvela/CrossDataset/3dpw_wo_invalid.npz'
-data_dir: '/pub/bjvela/PoseLab3D/data'
+path_to_dataset_h36m: /path/to/h36m_dataset
+path_to_dataset_gpa: /path/to/gpa_dataset_file.json
+path_to_dataset_surreal_train: /path/to/surreal_train_data.npz
+path_to_dataset_surreal_test: /path/to/surreal_test_data.npz
+path_to_dataset_3dpw: /path/to/3dpw_dataset_folder
+data_dir: /path/to/data_directory
 
 # Miscellaneous
 num_workers: 2
 print_sample: false
 save_predictions: false
+per_joint_error: false
 
 # Input arguments
 input_shape:

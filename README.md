@@ -53,7 +53,8 @@ We recommend using **conda** + **pip** to ensure an isolated environment that cl
    ```bash
    pip install -r requirements.txt
 
-   Note: onnxruntime-gpu==1.17.1 may require CUDA 12.2. If your system only has CUDA 11.1 (or 11.x) available, you might see warnings or fallback to CPU. Ensure you load a module or have drivers that match the required version.
+   Note: onnxruntime-gpu==1.17.1 may require CUDA 12.2. If your system only has CUDA 11.1 (or 11.x) available, you might see warnings or fall back to CPU. Ensure you load a module or have drivers that match the required version.
+   The above note, regarding onnxruntime-gpu, only applies when planning on running the ONNX-based files that were saved from TensorFlow workflows. 
 
 
 ## 📁 Datasets Overview
@@ -62,38 +63,57 @@ Below is a list of the four supported datasets, including their sources and down
 
 | Code-name | Source                         | Download Instructions |
 |-----------|--------------------------------|------------------------|
-| **H36M**  | Ionescu *et al.* (2014)        | [Download H36M Test and Train Data](link) → place in in `data/` |
-| **GPA**  | Wang *et al.* (2019)    | [Download GPA Test and Train Data](link) → place in `data/` |
-| **3DPW**   | von Marcard *et al.* (2018)             | [Download 3DPW Test and Train Data](link) → place in `data/` |
-| **Surreal** | Varol *et al.* (2017)        | [Download Surreal Test and Train Data](link) → place in `data/` |
+| **H36M**  | Ionescu *et al.* (2014)        | [Download H36M Test and Train Data](https://drive.google.com/file/d/1c84-AebSywvBhvFF0azF2137tGVYJqOO/view?usp=sharing) → place in in `data/` |
+| **GPA**  | Wang *et al.* (2019)    | [Download GPA Test and Train Data](https://drive.google.com/file/d/1KBkD6Uaq0PqSCQTDwfPsMP2C7VG7Pof7/view?usp=sharing) → place in `data/` |
+| **3DPW**   | von Marcard *et al.* (2018)             | [Download 3DPW Test and Train Data](https://drive.google.com/file/d/1YNU0wmBsOJF4RtdFsFKljcqEOYDkf79p/view?usp=sharing) → place in `data/` |
+| **Surreal** | Varol *et al.* (2017)       | [Download Train](https://drive.google.com/file/d/1sflaTtEmLYBqjKdTcWKp8aXeuWhItXLc/view?usp=sharing), [Download Test](https://link.to/surreal_test.npz) → place both in `data/` |
 
 > ⚠️ Note: If you have the raw data, you can generate the dataset `.npz` files yourself by providing the path to the data using our processing scripts. 
 
 
 ## 🧠 Models Overview
 
-The following models are supported for evaluation within PoseBench3D. Each model was trained on Human3.6M and can be evaluated across 3DPW, GPA, and SURREAL datasets. Below are links to the original code repositories and pretrained model files.
-
+The following models are supported for evaluation within PoseBench3D. Each model was trained on Human3.6M and can be evaluated across 3DPW, GPA, and SURREAL datasets. All models were trained on GT Keypoints. Below are links to the original code repositories and pretrained model files.
+### Non-Normalized Models
  **Important**: Please create a directory named `checkpoint/` at the root of the repository and place all downloaded model files (.onnx or .pt) inside it. The evaluation scripts will automatically look there.
 
 | Model Name          | GitHub Repo                                              | Model File (.pt / .onnx)                                  |
 |---------------------|-----------------------------------------------------------|------------------------------------------------------------|
-| GraFormer           | [GitHub](https://github.com/Graformer/GraFormer)       | [Download Checkpoint](https://link.to/graformer_model.onnx)     |
-| SEM-GCN (Unopt.)    | [GitHub](https://github.com/jfzhang95/PoseAug)         | [Download Checkpoint](https://link.to/semgcn_unopt_model.onnx)  |
-| SEM-GCN (PoseAug)   | [GitHub](https://github.com/jfzhang95/PoseAug)         | [Download Checkpoint](https://link.to/semgcn_poseaug_model.onnx)|
-| VideoPose (Unopt.)  | [GitHub](https://github.com/jfzhang95/PoseAug)     | [Download Checkpoint](https://link.to/videopose_unopt_model.onnx)|
-| GLA-GCN             | [GitHub](https://github.com/bruceyo/GLA-GCN)         | [Download Checkpoint](https://link.to/gla-gcn_model.onnx)       |
-| ST-GCN (Unopt.)     | [GitHub](https://github.com/jfzhang95/PoseAug)          | [Download Checkpoint](https://link.to/stgcn_unopt_model.onnx)   |
-| Martinez (Unopt.)   | [GitHub](https://github.com/jfzhang95/PoseAug)   | [Download Checkpoint](https://link.to/martinez_unopt.onnx)      |
-| PoseFormer V1       | [GitHub](https://github.com/zczcwh/PoseFormer)   | [Download Checkpoint](https://link.to/poseformer_v1.onnx)       |
-| PoseFormer V2       | [GitHub](https://github.com/QitaoZhao/PoseFormerV2)   | [Download Checkpoint](https://link.to/poseformer_v2.onnx)       |
-| KTPFormer           | [GitHub](https://github.com/JihuaPeng/KTPFormer)       | [Download Checkpoint](https://link.to/ktpformer.onnx)           |
-| MixSTE              | [GitHub](https://github.com/JinluZhang1126/MixSTE)          | [Download Checkpoint](https://link.to/mixste.onnx)              |
-| D3DP                | [GitHub](https://github.com/paTRICK-swk/D3DP)            | [Download Checkpoint](https://link.to/d3dp.onnx)                |
-| ST-GCN (PoseAug)    | [GitHub](https://github.com/jfzhang95/PoseAug)          | [Download Checkpoint](https://link.to/stgcn_poseaug_model.onnx) |
-| MHFormer            | [GitHub](https://github.com/Vegetebird/MHFormer)        | [Download Checkpoint](https://link.to/mhformer.onnx)            |
-| Martinez (PoseAug)  | [GitHub](https://github.com/jfzhang95/PoseAug)   | [Download Checkpoint](https://link.to/martinez_poseaug.onnx)    |
-| VideoPose (PoseAug) | [GitHub](https://github.com/jfzhang95/PoseAug)     | [Download Checkpoint](https://link.to/videopose_poseaug.onnx)   |
+| GraFormer           | [GitHub](https://github.com/Graformer/GraFormer)       | [Download Checkpoint](https://drive.google.com/file/d/1wXilD1Xv68IKEMoqzPP5-2MVpr8ZbkG7/view?usp=sharing)     |
+| SEM-GCN (Unopt.)    | [GitHub](https://github.com/jfzhang95/PoseAug)         | [Download Checkpoint](https://drive.google.com/file/d/1tp_EP7KQ2C8QAGx3EL14Vg5zZTL_No4d/view?usp=sharing)  |
+| SEM-GCN (PoseAug)   | [GitHub](https://github.com/jfzhang95/PoseAug)         | [Download Checkpoint](https://drive.google.com/file/d/1y7K758d-P7jeDlsBEZTo_IfSCGXU1wLx/view?usp=sharing)|
+| VideoPose (Unopt.)  | [GitHub](https://github.com/jfzhang95/PoseAug)     | [Download Checkpoint](https://drive.google.com/file/d/18jsYvTaBCtROD7I3O-hqUSFa4u6ZIwTM/view?usp=sharing)|
+| GLA-GCN             | [GitHub](https://github.com/bruceyo/GLA-GCN)         | [Download Checkpoint](https://drive.google.com/file/d/18z9hBKV510zIYgZ8bJVRwv1Rpvb-tS21/view?usp=sharing)       |
+| ST-GCN (Unopt.)     | [GitHub](https://github.com/jfzhang95/PoseAug)          | [Download Checkpoint](https://drive.google.com/file/d/1zRfVVopzis5daKNIb4GnRCpXf1GQ85Xp/view?usp=sharing)   |
+| Martinez (Unopt.)   | [GitHub](https://github.com/jfzhang95/PoseAug)   | [Download Checkpoint](https://drive.google.com/file/d/18Majb5uFeSOGWa-oFCtYOWirZpWY-a5J/view?usp=sharing)      |
+| PoseFormer V1       | [GitHub](https://github.com/zczcwh/PoseFormer)   | [Download Checkpoint](https://drive.google.com/file/d/1kkZafVwDAgBDZ9P-JMP0tOkMoCsXEtFx/view?usp=sharing)       |
+| PoseFormer V2       | [GitHub](https://github.com/QitaoZhao/PoseFormerV2)   | [Download Checkpoint](https://drive.google.com/file/d/1M6BWwq2rvPHr5mSiFXPnF6sjeHKw-iCa/view?usp=sharing)       |
+| KTPFormer           | [GitHub](https://github.com/JihuaPeng/KTPFormer)       | [Download Checkpoint](https://drive.google.com/file/d/1nZ-62jU0LgdN9f19MPFHtZlhJuk5eRFa/view?usp=sharing)           |
+| MixSTE              | [GitHub](https://github.com/JinluZhang1126/MixSTE)          | [Download Checkpoint](https://drive.google.com/file/d/1MP_-Mnq27J3xeRlesSwLJM_6kAJuuiJg/view?usp=sharing)              |
+| D3DP                | [GitHub](https://github.com/paTRICK-swk/D3DP)            | [Download Checkpoint](https://drive.google.com/file/d/1WDjhLFhFNwI7YJQFT2z_4lEbPzQ7Za1l/view?usp=sharing)                |
+| ST-GCN (PoseAug)    | [GitHub](https://github.com/jfzhang95/PoseAug)          | [Download Checkpoint](https://drive.google.com/file/d/1FecyiUOTgKFOy1SiAOXPPbZLIjDWSJKO/view?usp=sharing) |
+| MHFormer            | [GitHub](https://github.com/Vegetebird/MHFormer)        | [Download Checkpoint](https://drive.google.com/file/d/1Ck6jgLPrQWqlvqwmrxQyPfH4HreXOv03/view?usp=sharing)            |
+| Martinez (PoseAug)  | [GitHub](https://github.com/jfzhang95/PoseAug)   | [Download Checkpoint](https://drive.google.com/file/d/1AEOwm7iu-6VW9hRFkAECH5HrAcMGZGv_/view?usp=sharing)    |
+| VideoPose (PoseAug) | [GitHub](https://github.com/jfzhang95/PoseAug)     | [Download Checkpoint](https://drive.google.com/file/d/1K9hQGQd-muobOUpRDS-veaR_Xv1ybjtq/view?usp=sharing)   |
+
+
+### Normalized Models
+
+The following models have been trained with normalized 2D inputs (e.g., z-score standardization). These are used to evaluate the impact of input normalization on cross-dataset generalization. Each model was trained on one of the supported datasets using only ground truth 2D keypoints.
+
+> 📂 **Reminder**: Place all normalized model checkpoints inside the `checkpoint/` directory.
+
+| Model Name                        | GitHub Repo                                      | Model File (.pt / .onnx)                                   |
+|----------------------------------|--------------------------------------------------|-------------------------------------------------------------|
+| Martinez (Trained on H36M, Normalized)      | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1JWzkf91K0k-XrsTYXYQCY6Q6nt1tqiws/view?usp=sharing)        |
+| Martinez (Trained on GPA, Normalized)       | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1IH-WSaQbHtP75ku-6dIlN6V-B6Z-GzwM/view?usp=sharing)         |
+| Martinez (Trained on 3DPW, Normalized)      | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1cP5rhK4mNASOZn6HI3Tht8DMwAUnDw_a/view?usp=sharing)        |
+| Martinez (Trained on SURREAL, Normalized)   | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/16XqK5GMbuM4KVcP82ZjWaMI10uMP__gj/view?usp=sharing)     |
+| SEM-GCN (Trained on H36M, Normalized)       | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1PA-kDD587OsSVm6ktScFGd4Wkgg5fQB8/view?usp=sharing)          |
+| SEM-GCN (Trained on GPA, Normalized)        | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1LWQe-XLREAOqWuC5qzzGq7_HWobT89Zh/view?usp=sharing)           |
+| SEM-GCN (Trained on 3DPW, Normalized)       | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/12hfkzq1GrvSWuuLZQFj7ZFW40VgVJy_E/view?usp=sharing)          |
+| SEM-GCN (Trained on SURREAL, Normalized)    | [GitHub](https://github.com/jfzhang95/PoseAug)  | [Download Checkpoint](https://drive.google.com/file/d/1tfgaR8Oksy25nE953K13K1vTg7fH54lh/view?usp=sharing)       |
+
 
 
 
@@ -154,7 +174,7 @@ model_info:
 ```
 ## ✅ Evaluation
 
-To evaluate a given model on a target dataset, use the `readBinary.py` script with the appropriate configuration file. Below are two example commands:
+To evaluate a given model on a target dataset, use the `readBinary.py` script with the appropriate configuration file. We provide pre-configured Config YAML files used for our experiments on the models in the configs/ folder. Below are two example commands:
 
 **KTPFormer on Human3.6M**  
 ```bash

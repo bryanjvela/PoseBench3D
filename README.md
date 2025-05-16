@@ -101,6 +101,8 @@ The following models are supported for evaluation within PoseBench3D. Each model
 
 PoseBench3D uses a unified YAML-based configuration file to manage model settings, dataset paths, runtime behavior, and I/O tensor shapes. This allows users to customize their experiments by simply modifying a single file.
 
+> ⚠️ Note: We provide pre-configured Config YAML files used for our experiments on the models in the ```configs/``` folder.  
+
 ---
 ```yaml
 # General settings

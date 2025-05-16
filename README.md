@@ -66,7 +66,7 @@ Below is a list of the four supported datasets, including their sources and down
 | **H36M**  | Ionescu *et al.* (2014)        | [Download H36M Test and Train Data](https://drive.google.com/file/d/1c84-AebSywvBhvFF0azF2137tGVYJqOO/view?usp=sharing) → place in in `data/` |
 | **GPA**  | Wang *et al.* (2019)    | [Download GPA Test and Train Data](https://drive.google.com/file/d/1KBkD6Uaq0PqSCQTDwfPsMP2C7VG7Pof7/view?usp=sharing) → place in `data/` |
 | **3DPW**   | von Marcard *et al.* (2018)             | [Download 3DPW Test and Train Data](https://drive.google.com/file/d/1YNU0wmBsOJF4RtdFsFKljcqEOYDkf79p/view?usp=sharing) → place in `data/` |
-| **Surreal** | Varol *et al.* (2017)       | [Download Train](https://drive.google.com/file/d/1sflaTtEmLYBqjKdTcWKp8aXeuWhItXLc/view?usp=sharing), [Download Test](https://link.to/surreal_test.npz) → place both in `data/` |
+| **Surreal** | Varol *et al.* (2017)       | [Download Train](https://drive.google.com/file/d/1sflaTtEmLYBqjKdTcWKp8aXeuWhItXLc/view?usp=sharing), [Download Test](https://drive.google.com/file/d/1sflaTtEmLYBqjKdTcWKp8aXeuWhItXLc/view?usp=sharing) → place both in `data/` |
 
 > ⚠️ Note: If you have the raw data, you can generate the dataset `.npz` files yourself by providing the path to the data using our processing scripts. 
 
